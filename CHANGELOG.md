@@ -40,6 +40,9 @@
 - 完成 Redis 过期与内存管理题目 320～329 的第一轮准确性校验。
 - 校准被动/主动过期、maxmemory、淘汰候选、近似 LRU/LFU 及 Redis 8.6+ LRM 边界。
 - 修正“固定每 100ms 扫描”“内存满一定自动淘汰且不会 OOM”和“LFU 是精确次数”等表述。
+- 完成 Web Cookie、Session 与 JWT 题目 381～399 的第一轮准确性校验。
+- 校准 Cookie 发送范围、Session ID 安全、JWS/JWE、Claims 验证、Bearer Token 与主动撤销边界。
+- 根据简历确认 JWT、双拦截器和 ThreadLocal 的真实项目链路，并将算法、Claims、有效期与注销机制标记为项目核验项。
 
 ## 1.0.0 - 2026-08-22
 
