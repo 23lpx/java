@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(py --version)",
+      "Bash(python _generate.py)",
+      "Bash(python -c ' *)",
+      "Bash(python _rename.py)",
+      "Bash(iconv -f UTF-8 -t UTF-8)",
+      "Bash(iconv -f GBK -t UTF-8)",
+      "Bash(python _fix.py)",
+      "Bash(rm -f _fix.py)",
+      "Bash(grep -vxFf /tmp/nums.txt)",
+      "Bash(python -c \"import sys; print\\(sys.version\\)\")",
+      "Bash(python -)",
+      "Bash(PYTHONIOENCODING=utf-8 python -)"
+    ]
+  }
+}
