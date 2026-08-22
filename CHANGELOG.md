@@ -34,6 +34,9 @@
 - 完成 Redis 进阶题目 583～590 的第一轮准确性校验。
 - 校准异步复制、Sentinel 投票、Cluster 槽与分区、锁租约、fencing token 及 Redisson watchdog。
 - 修正“副本等于备份”“Sentinel 保证服务不中断”“Cluster 强一致”和“Redisson 绝对可靠”等表述。
+- 完成 Redis 基础题目 305～319 的第一轮准确性校验。
+- 校准线程模型、I/O 多路复用、经典数据类型、TTL 与 Key 设计边界。
+- 修正“Redis 完全单线程”“TTL 到期立即物理删除”和“前缀可直接批量删除”等绝对化表述。
 
 ## 1.0.0 - 2026-08-22
 
