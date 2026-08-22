@@ -1,0 +1,15 @@
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Obsidian temporary files; shared Vault configuration remains tracked
+.trash/
+.obsidian/cache/
+
+# IDE transient files; existing shared project files are not removed here
+.idea/workspace.xml
+.idea/shelf/
+
+# Temporary files
+*.tmp
+*.swp
