@@ -43,6 +43,9 @@
 - 完成 Web Cookie、Session 与 JWT 题目 381～399 的第一轮准确性校验。
 - 校准 Cookie 发送范围、Session ID 安全、JWS/JWE、Claims 验证、Bearer Token 与主动撤销边界。
 - 根据简历确认 JWT、双拦截器和 ThreadLocal 的真实项目链路，并将算法、Claims、有效期与注销机制标记为项目核验项。
+- 完成 Web ThreadLocal 题目 400～410 的第一轮准确性校验。
+- 校准每线程关联值、ThreadLocalMap、弱引用 stale entry、线程池复用与同步/异步请求边界。
+- 根据简历保留 JWT、双拦截器和 ThreadLocal 上下文链路，并将字段名、清理回调及异步传播标记为项目核验项。
 
 ## 1.0.0 - 2026-08-22
 
