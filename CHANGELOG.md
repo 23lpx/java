@@ -31,6 +31,9 @@
 - 完成 Redis 持久化题目 374～380 的第一轮准确性校验。
 - 校准 RDB 触发与写时复制、AOF 刷盘与重写、multi-part AOF 及启动恢复顺序。
 - 修正“持久化等于零丢失”“AOF 一定更大更慢”和“持久化可以替代高可用与备份”等绝对化表述。
+- 完成 Redis 进阶题目 583～590 的第一轮准确性校验。
+- 校准异步复制、Sentinel 投票、Cluster 槽与分区、锁租约、fencing token 及 Redisson watchdog。
+- 修正“副本等于备份”“Sentinel 保证服务不中断”“Cluster 强一致”和“Redisson 绝对可靠”等表述。
 
 ## 1.0.0 - 2026-08-22
 
