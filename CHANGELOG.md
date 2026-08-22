@@ -46,6 +46,9 @@
 - 完成 Web ThreadLocal 题目 400～410 的第一轮准确性校验。
 - 校准每线程关联值、ThreadLocalMap、弱引用 stale entry、线程池复用与同步/异步请求边界。
 - 根据简历保留 JWT、双拦截器和 ThreadLocal 上下文链路，并将字段名、清理回调及异步传播标记为项目核验项。
+- 完成 Web HTTP 题目 411～428 的第一轮准确性校验。
+- 校准 HTTP/1.1、HTTP/2、HTTP/3 消息模型，GET/POST/PUT/PATCH 语义、幂等性及 200/400/401/403/404/500 状态码边界。
+- 修正“HTTP 都基于 TCP”“POST 不能缓存”“403 必然已认证”和“HTTPS 等于 HTTP 与 TCP 之间加 SSL”等绝对化表述。
 
 ## 1.0.0 - 2026-08-22
 
