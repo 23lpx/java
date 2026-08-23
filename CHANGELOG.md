@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成日志、Git、Maven 与 Linux 题目 542～582 共 41 题的第一轮准确性校验。
+- 校准 SLF4J/Logback 分层、日志诊断链路、Git 快照与引用、fetch/pull/merge/reset、Maven 生命周期与依赖调解、Linux 文件/进程/端口/权限语义。
+- 修正“FATAL 是 SLF4J 标准级别”“pull 固定等于 fetch + merge”“commit 记录文件差异”“Maven 自动选择最高依赖版本”“kill 等于立即杀进程”和“目录 rwx 与文件含义相同”等绝对化表述。
 - 完成 Java 线程基础、锁与线程池、并发进阶题目 494～522、591～599 共 38 题的第一轮准确性校验。
 - 校准平台/虚拟线程、Thread.State、wait/notify、happens-before、volatile、线程池扩容与拒绝、Tomcat Executor、ConcurrentHashMap、CAS、AQS 和 ReentrantLock 契约。
 - 修正“线程始终是 CPU 最小调度单位”“volatile 直接读写主内存”“wait 释放全部锁”“线程池预建全部核心线程”“AQS 严格 FIFO”和“ConcurrentHashMap 复合操作天然原子”等绝对化表述。
