@@ -14,228 +14,268 @@ tags:
 
 **面试回答**
 
-Spring Boot 是基于 Spring 的框架，通过自动配置、起步依赖（Starter）和内嵌服务器，让我们能快速搭建、独立运行、开箱即用的 Spring 应用，省去大量配置。
+Spring Boot 是用于创建独立运行、面向生产的 Spring 应用的项目。它通过自动配置、Starter、外部化配置、可执行归档和运维特性降低搭建成本，但核心容器、MVC、事务等能力仍来自 Spring Framework。
 
-**理解**
+**原理与理解**
 
-传统 Spring 要写一堆 XML/配置、手动搭 Tomcat、引一堆依赖，Spring Boot 用「约定优于配置」把这些都自动化了。核心能力：自动配置、Starter 依赖管理、内嵌容器、Actuator 监控等。它是 Spring 的「脚手架」，不是替代 Spring 的新框架。
+Boot 根据类路径、已有 Bean 和配置属性进行条件化装配，并提供经过协调的依赖版本和常用默认值。`SpringApplication` 负责准备环境、创建并刷新应用上下文，Web 应用还可随应用启动嵌入式服务器。
 
-**场景**
+**成立条件与边界**
 
-项目就是一个 Spring Boot 应用，启动类上 @SpringBootApplication，一个 main 方法就能跑起来，内嵌 Tomcat，不用单独部署。
+“约定优于配置”不等于零配置；自动配置只在条件满足时生效，也可能被显式排除或定制。Actuator、特定服务器和数据访问组件都要有对应依赖，不能视为 Boot 必然自带。
+
+**实际场景（通用工程）**
+
+一个 MVC 服务可通过 Boot 管理依赖、加载配置并打包为可执行 JAR；具体使用 Tomcat、Jetty 还是外部容器要以依赖和部署方式为准。
 
 **常见追问**
 
-- Spring Boot 和 Spring 是什么关系？（Boot 基于 Spring，是对它的封装和简化）
-- 为什么能独立运行？（内嵌 Tomcat，打成 jar 直接 java -jar 运行）
+- Boot 与 Spring Framework 的关系？——Boot 组织和自动配置 Spring 生态能力，不替代 Framework。
+- 为什么可以独立运行？——应用可携带嵌入式服务器并由 `SpringApplication` 启动。
 
 **易错点**
 
-Spring Boot 不是新框架，是 Spring 的快速启动方案；别把「Spring Boot」和「Spring 全家桶里的某个框架」对立起来。
+不要把 Spring Boot 简化成“脚手架”或“内嵌 Tomcat”；它还定义了配置、依赖和运行约定。
 
 ## 117. Spring Boot 和 Spring 有什么关系？
 
 **面试回答**
 
-Spring Boot 构建在 Spring 之上，是对 Spring 的封装和简化。Spring 提供 IoC、AOP 等核心能力，Spring Boot 用自动配置、Starter 让这些能力开箱即用。
+Spring Framework 提供 IoC、AOP、事务和 Web 等基础能力；Spring Boot 以这些能力为基础，通过自动配置、依赖管理和运行约定简化应用创建与部署。
 
-**理解**
+**原理与理解**
 
-可以把 Spring 理解成「发动机」，Spring Boot 是「整车 + 一键启动」。没有 Spring Boot，Spring 也能用，但要手动配很多东西；有了 Boot，启动一个 Web 项目只要一个注解 + 一个 main 方法。
+Boot 本身也使用 Spring 的配置类、条件注解和应用上下文。业务 Bean 最终仍由 Spring 容器管理，MVC 请求仍由 Spring MVC 处理，Boot 主要负责选择合理的默认装配并提供扩展点。
 
-**场景**
+**成立条件与边界**
 
-项目里的 IoC、AOP、事务本质都来自 Spring，Spring Boot 负责帮我们把它们自动配好、简化依赖管理。
+Boot 不是对 Spring API 的简单二次封装，也不是所有 Spring 项目的必需品。传统 Spring 应用可以不使用 Boot，Boot 应用也必须理解容器、代理和事务等基础契约。
+
+**实际场景（通用工程）**
+
+引入 Web Starter 后，Boot 根据依赖配置 MVC 基础设施；Controller、Service 的注入和生命周期仍遵守 Spring Framework 规则。
 
 **常见追问**
 
-- Spring Boot 能脱离 Spring 用吗？（不能，它基于 Spring）
-- 学 Spring Boot 还要学 Spring 吗？（要，IoC/AOP 等原理是 Boot 的基础）
+- Boot 能脱离 Spring Framework 吗？——其核心应用模型建立在 Spring 之上。
+- 为什么还要学习 Spring？——排查条件装配、Bean 冲突和代理边界都依赖这些知识。
 
 **易错点**
 
-Boot 是 Spring 的「封装/简化」，不是「替代」，底层还是 Spring 的那套 IoC/AOP。
+“Spring 是发动机、Boot 是整车”只能辅助记忆，不能替代对两者职责的准确说明。
 
 ## 118. Spring Boot 为什么能简化开发？
 
 **面试回答**
 
-主要靠三点：自动配置（按依赖自动配好 Bean）、起步依赖 Starter（一键引入相关依赖并管理版本）、内嵌服务器（不用单独部署 Tomcat）。
+主要因为自动配置减少样板装配，Starter 聚合常用依赖，Boot 的 BOM/依赖管理协调版本，外部化配置统一环境差异，嵌入式服务器与可执行归档简化运行和部署。
 
-**理解**
+**原理与理解**
 
-自动配置省去手写 Bean 配置；Starter 把「一个功能的依赖集合 + 默认版本」打包，避免依赖冲突；内嵌 Tomcat 让应用能直接运行。再加上「约定优于配置」的思想，很多东西有合理默认值，不配也能跑。
+类路径出现某项技术且应用没有提供冲突配置时，相关自动配置才可能生效；配置属性允许在不改代码的情况下调整默认值。构建插件可把应用及依赖组织为可执行归档。
 
-**场景**
+**成立条件与边界**
 
-项目里引入 `spring-boot-starter-web` 就自动配好 Spring MVC、内嵌 Tomcat、Jackson 等，几乎不用额外配置就能写接口。
+Starter 负责依赖聚合，版本协调主要来自 Boot 的 dependency management/BOM，不能把两者混为一谈。默认值只适合常见场景，连接池、线程、超时和安全配置仍需按生产负载验证。
+
+**实际场景（通用工程）**
+
+开发者引入合适的 Web 与 Validation Starter 后即可获得常用基础设施，再通过配置属性调整端口、序列化和校验行为。
 
 **常见追问**
 
-- 自动配置怎么实现的？（@EnableAutoConfiguration + 条件装配 @Conditional 系列）
-- 什么是约定优于配置？（提供合理默认值，减少显式配置）
+- 自动配置依据什么？——类路径、Bean、属性、应用类型等条件。
+- 简化是否意味着无需排查依赖？——不是，仍要查看条件报告和依赖树。
 
 **易错点**
 
-「简化」不等于「不用懂原理」，出问题还是得回到 Spring 的 IoC/AOP 去理解。
+不要回答“Starter 自带所有代码并管理版本”；它通常只是依赖描述符。
 
 ## 119. 什么是自动配置？
 
 **面试回答**
 
-自动配置是 Spring Boot 根据你引入的依赖和类路径情况，自动帮你创建并配置所需的 Bean，而不需要你手写配置。
+自动配置是 Spring Boot 根据运行环境和应用已声明内容，有条件地注册一组合理默认 Bean 的机制；应用可以通过配置、显式 Bean 或排除项进行定制。
 
-**理解**
+**原理与理解**
 
-Spring Boot 通过 `@EnableAutoConfiguration` 开启自动配置，运行时读取很多 `xxxAutoConfiguration` 类，用条件注解（@ConditionalOnClass、@ConditionalOnMissingBean 等）判断「某个类在不在、Bean 有没有被用户自定义」，满足条件才装配。核心是「按需、有默认值、可被用户覆盖」。
+`@EnableAutoConfiguration` 会导入候选自动配置类。现代 Boot 的候选通常列在 `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`，配置类再通过 `@ConditionalOnClass`、`@ConditionalOnMissingBean`、`@ConditionalOnProperty` 等判断是否生效。
 
-**场景**
+**成立条件与边界**
 
-项目引入 MyBatis 相关 Starter 后，Spring Boot 自动配置 DataSource、SqlSessionFactory 等，不用我们手写。
+“用户配置优先”是常见 back-off 设计，不是所有自动配置都由 `@ConditionalOnMissingBean` 控制，也不保证同名 Bean 可以任意覆盖。应查看具体自动配置和 Condition Evaluation Report。
+
+**实际场景（通用工程）**
+
+类路径存在数据源实现且属性完整时，Boot 可能配置数据源；应用显式提供相应 Bean 后，部分默认配置会退让，具体以条件为准。
 
 **常见追问**
 
-- 自动配置的判断条件靠什么？（@Conditional 系列注解）
-- 用户自定义配置能覆盖自动配置吗？（能，@ConditionalOnMissingBean 保证用户优先）
+- 如何知道某项配置为何没生效？——查看条件评估报告、启动日志和对应自动配置源码。
+- 能否排除自动配置？——可以使用注解属性或配置项排除指定类。
 
 **易错点**
 
-自动配置不是「无脑全配」，是「条件装配」，条件不满足就不配；理解这一点就不会觉得它神秘。
+自动配置不是扫描所有 JAR 后“无脑创建 Bean”，而是一组可审查的条件化配置。
 
 ## 120. 什么是 Starter？
 
 **面试回答**
 
-Starter 是一组依赖的集合打包，把某个功能需要的所有依赖（含版本）和自动配置集中在一起，引入一个 Starter 就能用整套功能，避免手动逐个引依赖和管版本。
+Starter 是面向某类功能的一组依赖描述，使应用只声明一个入口依赖就能获得常见库组合；官方 Starter 通常命名为 `spring-boot-starter-*`。
 
-**理解**
+**原理与理解**
 
-比如 `spring-boot-starter-web` 内部包含了 Spring MVC、内嵌 Tomcat、Jackson 等一堆依赖。Starter 的核心价值：①依赖聚合（省心）②版本统一（避免冲突）。命名上，官方的是 `spring-boot-starter-xxx`，第三方通常是 `xxx-spring-boot-starter`。
+Starter 的 POM/模块主要声明传递依赖，本身往往没有业务实现。自动配置可以和 Starter 一起发布，但两者职责不同：前者决定如何装配，后者帮助把相关类库放入类路径。
 
-**场景**
+**成立条件与边界**
 
-项目里引入 `spring-boot-starter-web`、`spring-boot-starter-data-redis`、`spring-boot-starter-validation` 等，每个都对应一块功能的依赖集合。
+依赖版本由 Boot 的 BOM 或父工程等依赖管理机制协调，不是 Starter 单独“锁死”。第三方命名有推荐惯例但不是强制标准，仍要检查其兼容版本、自动配置入口和维护质量。
+
+**实际场景（通用工程）**
+
+Web、Validation、Data Redis 等 Starter 可减少逐项声明依赖；若不需要默认服务器，可排除传递依赖并选择其他实现。
 
 **常见追问**
 
-- Starter 和自动配置什么关系？（Starter 引入依赖，自动配置类根据这些依赖装配 Bean）
-- 官方和第三方 Starter 命名区别？（官方 spring-boot-starter-xxx，第三方 xxx-spring-boot-starter）
+- Starter 和自动配置是什么关系？——常配套但不等同：一个聚合依赖，一个注册默认 Bean。
+- 自定义 Starter 需要什么？——依赖描述、可选自动配置及清晰的属性和 back-off 契约。
 
 **易错点**
 
-Starter 本质是「依赖聚合 + 版本管理」，它不写业务逻辑，别理解成「一个功能模块的代码包」。
+Starter 不是“功能代码包 + 版本管理 + 自动配置”三者必然合一。
 
 ## 121. `@SpringBootApplication` 有什么作用？
 
 **面试回答**
 
-它是 Spring Boot 启动类的核心注解，标记主类，开启自动配置和组件扫描，是整个应用的入口。
+`@SpringBootApplication` 是常用的主配置组合注解，表示 Boot 配置类、启用自动配置并从该类所在包开始组件扫描；应用通常把它标在传给 `SpringApplication.run` 的主类上。
 
-**理解**
+**原理与理解**
 
-`@SpringBootApplication` 是一个组合注解，主要包含三部分：`@SpringBootConfiguration`（标记配置类）、`@EnableAutoConfiguration`（开启自动配置）、`@ComponentScan`（组件扫描）。一个注解搞定三件事，所以 main 方法里的 `SpringApplication.run(...)` 能启动整个容器。
+它组合了 `@SpringBootConfiguration`、`@EnableAutoConfiguration` 和 `@ComponentScan`，同时带有用于避免重复扫描特定配置类的过滤规则。`SpringApplication.run` 才负责实际引导应用上下文。
 
-**场景**
+**成立条件与边界**
 
-项目启动类上就这一个注解，main 方法调用 `SpringApplication.run` 启动应用。
+注解本身不是 JVM 入口，真正入口仍是 `main` 或其他启动机制。它也不要求类名必须叫 Application；扫描范围、自动配置排除和代理模式均可定制。
+
+**实际场景（通用工程）**
+
+把主配置类放在稳定的根包能覆盖常见业务子包；跨模块组件应显式导入或调整扫描，而不是依赖偶然目录结构。
 
 **常见追问**
 
-- 必须放在启动类上吗？（一般放在主类上，且建议放根包，便于扫描子包）
-- @SpringBootApplication 能拆开写吗？（能，等价于那三个注解）
+- 能否拆开写三个注解？——可以，但组合注解提供了 Boot 的常用约定和别名属性。
+- 为什么建议放根包？——默认组件扫描以它所在包为基准。
 
 **易错点**
 
-它是「组合注解」，不是一个单独功能；记住它 = 配置类 + 自动配置 + 组件扫描。
+不要说“加上注解 main 方法就自动产生”；启动调用和组合注解各有职责。
 
 ## 122. `@SpringBootApplication` 包含哪些主要注解？
 
 **面试回答**
 
-主要包含 `@SpringBootConfiguration`、`@EnableAutoConfiguration`、`@ComponentScan` 三个注解。
+主要是 `@SpringBootConfiguration`、`@EnableAutoConfiguration` 和 `@ComponentScan`：分别标识 Boot 主配置、导入自动配置、发现应用组件。
 
-**理解**
+**原理与理解**
 
-@SpringBootConfiguration 本质是 @Configuration，表示这是个配置类；@EnableAutoConfiguration 开启自动配置；@ComponentScan 扫描当前包及子包的组件。三者合起来，应用就能自动发现组件、按需装配 Bean、作为容器启动。
+`@SpringBootConfiguration` 元标注 `@Configuration`，并帮助测试等基础设施定位主配置；`@EnableAutoConfiguration` 导入候选自动配置；`@ComponentScan` 注册扫描到的 stereotype 组件。
 
-**场景**
+**成立条件与边界**
 
-理解这个组合后，就知道为什么启动类放在根包、组件放子包就能被扫到。
+“主要包含”不等于源码只有这三个元注解，它还包含继承、文档化等元数据和别名配置。`@ComponentScan` 只负责应用组件发现，自动配置候选不是靠普通组件扫描加载。
+
+**实际场景（通用工程）**
+
+遇到 Bean 未注册时先区分：是应用组件未被扫描，还是自动配置条件不成立，两者排查路径不同。
 
 **常见追问**
 
-- @SpringBootConfiguration 和 @Configuration 什么关系？（前者是后者的特化，本质一样）
-- @ComponentScan 默认扫哪里？（启动类所在包及其子包）
+- `@SpringBootConfiguration` 和 `@Configuration` 的区别？——前者建立在后者之上，并提供 Boot 主配置语义。
+- 自动配置来自组件扫描吗？——不是，由 `@EnableAutoConfiguration` 的导入机制加载。
 
 **易错点**
 
-别漏了 @EnableAutoConfiguration 是「自动配置」的开关，没有它 Boot 的省事能力就没了。
+不要把三种机制归纳成“都负责扫描 Bean”。
 
 ## 123. `application.yml` 和 `application.properties` 有什么作用？
 
 **面试回答**
 
-都是 Spring Boot 的配置文件，用来放应用的外部化配置（端口、数据库连接、日志级别等），Boot 启动时自动读取并绑定。
+它们是 Spring Boot 默认识别的外部配置文件格式，用于提供应用属性；属性还可来自环境变量、系统属性、命令行、配置树等，并按属性源优先级合并。
 
-**理解**
+**原理与理解**
 
-两者作用一样，只是格式不同：properties 是 `key=value` 平铺写法，yml 是缩进层级写法，更简洁、支持更自然的层级结构。Spring Boot 默认加载 `application.properties` 或 `application.yml`（也可用 yaml），也可以配合 profile 区分环境。
+properties 使用键值形式，YAML 适合表达层次结构，最终都会进入 `Environment`。应用可通过 `@ConfigurationProperties`、`@Value` 或 `Environment` 读取，后加载或高优先级来源可覆盖较低优先级值。
 
-**场景**
+**成立条件与边界**
 
-项目用 application.yml 配端口、MySQL 数据源、Redis 连接、JWT 密钥、支付宝配置等。
+不能只背“properties 一定覆盖 yml”而忽略文件位置、导入和属性源顺序；官方也建议同一位置尽量只选一种格式。敏感凭据不应提交进仓库，YAML 也不适用于 `@PropertySource`。
+
+**实际场景（项目核验项）**
+
+可核对项目实际使用的配置文件、环境变量和密钥来源；只确认存在某项配置时，不扩写其生产环境值或发布流程。
 
 **常见追问**
 
-- 两者能同时存在吗？（能，properties 优先级高于 yml）
-- 配置文件里的值怎么读？（@Value、@ConfigurationProperties）
+- 如何绑定一组配置？——优先使用可校验的 `@ConfigurationProperties`。
+- 命令行属性能覆盖文件吗？——通常可以，具体遵守 Boot 的属性源顺序。
 
 **易错点**
 
-properties 和 yml 只是「格式」不同，功能等价；注意同时存在时的优先级（properties 覆盖 yml）。
+配置文件不是唯一来源，写在其中也不代表该值最终生效。
 
 ## 124. Spring Boot 如何配置不同环境？
 
 **面试回答**
 
-用 Profile 机制：定义多个环境配置文件，如 `application-dev.yml`、`application-prod.yml`，通过 `spring.profiles.active` 指定激活哪个环境。
+可使用 Spring Profile 隔离 Bean 和配置片段，并结合外部化配置在部署时选择活动 Profile，例如通过环境变量或命令行设置 `spring.profiles.active`。
 
-**理解**
+**原理与理解**
 
-不同环境（开发、测试、生产）配置不同（数据库地址、日志级别等），把这些差异拆到各自的 profile 文件里，主配置里用 `spring.profiles.active=dev` 激活。也可以打成 jar 后用命令行参数 `--spring.profiles.active=prod` 覆盖，实现一套代码多环境部署。
+`application-{profile}.properties/yaml` 等 profile-specific 文件会在对应 Profile 激活时参与合并；`@Profile` 可限制组件或配置类。Profile group 和 include 可组合多个能力集合。
 
-**场景**
+**成立条件与边界**
 
-项目里用 application-dev.yml 连本地数据库、application-prod.yml 连生产库，部署时指定 active 环境。
+Profile 不是密钥管理或发布系统。`spring.profiles.active`、`default` 等只能放在允许的位置，不能在自身已受 Profile 条件控制的文档里再次激活 Profile。生产环境选择不应硬编码在制品中。
+
+**实际场景（通用工程）**
+
+同一制品通过部署环境提供数据库地址、日志级别和活动 Profile；敏感项从密钥设施注入，而不是复制一份带明文密码的 prod 文件。
 
 **常见追问**
 
-- profile 文件命名规则？（application-{profile}.yml）
-- 命令行怎么指定环境？（--spring.profiles.active=prod）
+- Profile 文件命名？——常见为 `application-{profile}.yml` 或 properties。
+- 如何在命令行激活？——例如 `--spring.profiles.active=prod`。
 
 **易错点**
 
-激活环境用 `spring.profiles.active`，不是 `spring.profile.active`（少个 s 是常见拼写错误）。
+“一套代码多环境”不等于把所有生产机密都写进 Profile 文件。
 
 ## 125. Spring Boot 内嵌 Tomcat 有什么作用？
 
 **面试回答**
 
-内嵌 Tomcat 让应用不再需要外部安装、部署独立的 Tomcat 服务器，应用启动时内置的 Tomcat 就随之启动，直接打成 jar 包用 `java -jar` 就能运行。
+在 Servlet Web 应用选择 Tomcat 依赖时，Boot 可把服务器作为应用依赖并随应用上下文启动，使服务能以可执行 JAR 运行，无需把 WAR 手工部署到外部 Tomcat。
 
-**理解**
+**原理与理解**
 
-传统做法是把应用打成 war 包，放到外置 Tomcat 里。Spring Boot 把 Tomcat 作为依赖内嵌进应用，`SpringApplication.run` 时启动内嵌容器，监听端口处理请求。这样部署更简单、环境更一致（每个应用自带容器，互不影响）。
+Boot 创建并配置嵌入式 WebServer，注册 Servlet、Filter 等组件并管理服务器生命周期。端口、连接和线程等通过配置或定制器调整，构建插件负责生成可执行归档。
 
-**场景**
+**成立条件与边界**
 
-项目开发时直接运行 main 方法就能启动服务，打出的 jar 包丢到服务器 `java -jar` 就能跑，不用单独配 Tomcat。
+嵌入式服务器不一定是 Tomcat，也可以选择 Jetty 等；WebFlux 还可能使用不同服务器。Boot 也支持传统 WAR 部署，因此“Boot 项目必然是内嵌 Tomcat + JAR”不成立。
+
+**实际场景（通用工程）**
+
+本地可直接运行主类，部署时运行同一 JAR；生产环境仍需配置优雅停机、超时、资源上限、反向代理和健康检查。
 
 **常见追问**
 
-- 能换成别的容器吗？（能，比如用 Undertow、Jetty，排除 Tomcat 引入对应依赖）
-- 内嵌 Tomcat 是默认的吗？（是，spring-boot-starter-web 默认带内嵌 Tomcat）
+- 能替换 Tomcat 吗？——可以调整 Starter 的传递依赖并引入受支持服务器。
+- 内嵌是否等于无需运维配置？——不是，服务器参数和容量仍需验证。
 
 **易错点**
 
-内嵌 Tomcat 是「应用的一部分」，不是「外部服务器」；它让部署变简单，但本质还是那个 Servlet 容器。
+“自带服务器”描述的是依赖和生命周期模式，不代表服务器能力消失或无需调优。

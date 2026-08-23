@@ -14,366 +14,430 @@ tags:
 
 **面试回答**
 
-Spring MVC 是 Spring 框架中基于 MVC 设计模式构建 Web 应用的模块，负责接收请求、处理业务、返回响应，核心是 DispatcherServlet 前端控制器。
+Spring MVC 是 Spring Framework 基于 Servlet API 的 Web MVC 框架，以 `DispatcherServlet` 为前端控制器，提供请求映射、参数绑定、校验、异常解析、视图渲染和 HTTP 消息转换等能力。
 
-**理解**
+**原理与理解**
 
-MVC 即 Model（数据）、View（视图）、Controller（控制器）。Spring MVC 把 HTTP 请求的处理拆成一条清晰的链路：请求 → DispatcherServlet → HandlerMapping 找处理器 → Controller 处理 → 返回 ModelAndView 或数据 → 视图/响应渲染。它让 Web 开发分层清晰、可测试。
+它把 Web 请求协调拆给 `HandlerMapping`、`HandlerAdapter`、参数解析器、返回值处理器、`ViewResolver` 和 `HttpMessageConverter` 等扩展点。Controller 负责协议适配，业务规则通常下沉到 Service。
 
-**场景**
+**成立条件与边界**
 
-项目里的 Controller 层就是 Spring MVC 的体现，接收前端请求、调用 Service、返回 JSON 给前端。
+Spring MVC 属于 Servlet 阻塞式技术栈，不等于 Spring WebFlux。前后端分离时通常写响应体而非服务器端页面，但 View 并没有“退化成 JSON”，JSON 走的是消息转换分支。
+
+**实际场景（通用工程）**
+
+REST 接口由 Controller 接收 HTTP 输入、调用用例服务并返回 `ResponseEntity` 或响应对象，框架完成协商和序列化。
 
 **常见追问**
 
-- MVC 三个字母指什么？（Model、View、Controller）
-- Spring MVC 的核心组件是什么？（DispatcherServlet）
+- 核心入口是什么？——`DispatcherServlet`。
+- MVC 三部分是什么？——Model、View、Controller；在 REST 场景仍应区分模型与协议控制层。
 
 **易错点**
 
-Spring MVC 是 Spring 的一部分（Web 模块），不是独立框架；现在做前后端分离，View 常退化为「返回 JSON 数据」。
+不要回答“Spring MVC 负责处理业务”；它主要负责 Web 请求分派和协议适配。
 
 ## 127. 一个 HTTP 请求进入 Spring MVC 后经历哪些流程？
 
 **面试回答**
 
-大致流程：请求先到 DispatcherServlet → 通过 HandlerMapping 找到对应的 Handler（Controller 方法）→ 经过 HandlerAdapter 执行 Handler → 返回结果（ModelAndView 或数据）→ 视图解析/消息转换渲染 → 返回响应给客户端。
+在请求匹配到 `DispatcherServlet` 后，它通过 `HandlerMapping` 获得 `HandlerExecutionChain`，选择 `HandlerAdapter`，执行拦截器前置逻辑、参数解析和 Controller；随后由返回值处理器写响应体或生成 `ModelAndView`，异常则交给 `HandlerExceptionResolver`，最后完成渲染和清理回调。
 
-**理解**
+**原理与理解**
 
-DispatcherServlet 是「总调度」，它自己不干活，把活分给各组件：HandlerMapping 负责「找谁处理」，HandlerAdapter 负责「调用」，ViewResolver/HttpMessageConverter 负责「怎么返回」。整条链路里还穿插拦截器、参数解析、异常处理等。
+`RequestMappingHandlerAdapter` 内部组合参数解析器、数据绑定、校验、消息转换器和返回值处理器。REST 返回值可能在 HandlerAdapter 执行期间直接写入响应，不一定产生 View。
 
-**场景**
+**成立条件与边界**
 
-项目里前端发一个 `GET /dish/list`，DispatcherServlet 找到 DishController.list()，解析参数、执行方法，返回 JSON 列表给前端。
+Filter 位于 Servlet 链更外层；异步请求会退出原线程并可能再次 dispatch，不能把所有请求背成一次线程内的固定直线。
+
+**实际场景（通用工程）**
+
+JSON 请求先按映射定位方法，再由消息转换器反序列化并校验，业务返回对象后经内容协商选择转换器写回。
 
 **常见追问**
 
-- 谁负责找处理器？（HandlerMapping）
-- 参数解析和返回值转换靠什么？（HandlerAdapter 里的 ArgumentResolver 和 HttpMessageConverter）
+- 谁负责找 Handler？——`HandlerMapping`。
+- 谁真正调用 Controller？——合适的 `HandlerAdapter`。
 
 **易错点**
 
-DispatcherServlet 是「调度中心」不是「处理器」；记流程抓「找 → 调 → 返」三个关键环节。
+不要漏掉拦截器、异常解析和返回值处理，也不要说 Controller 必然返回 `ModelAndView`。
 
 ## 128. DispatcherServlet 有什么作用？
 
 **面试回答**
 
-DispatcherServlet 是 Spring MVC 的前端控制器，作为所有请求的统一入口，负责分发请求、协调各组件完成处理，并返回响应。
+`DispatcherServlet` 是 Spring MVC 的前端控制器，统一协调 Handler 查找、适配执行、异常处理、视图解析和响应完成，但不承载具体业务逻辑。
 
-**理解**
+**原理与理解**
 
-它是整个 MVC 流程的「中央调度器」。所有请求先进来，它根据 HandlerMapping 找到处理器、交给 HandlerAdapter 执行，再处理结果渲染。它本身是 Servlet，配置在 web 容器里，映射到所有请求路径。
+它继承 Servlet 基础类，由 Servlet 容器按映射接收请求，并委托给配置在 `WebApplicationContext` 中的 MVC 策略组件。不同 Handler 类型可由不同 Adapter 执行。
 
-**场景**
+**成立条件与边界**
 
-项目里每个请求都经过 DispatcherServlet 调度，再由它转给具体 Controller 处理。
+并非服务器上的“所有请求”必然经过它：Filter、其他 Servlet、容器默认资源和 servlet mapping 会影响路径。静态资源若由 MVC 的资源 Handler 处理，则仍可进入其映射链路。
+
+**实际场景（通用工程）**
+
+API 路径映射到 DispatcherServlet 后，框架负责找到 Controller 和转换返回值，业务 Service 对 Servlet API 保持低耦合。
 
 **常见追问**
 
-- DispatcherServlet 是 Servlet 吗？（是，继承自 HttpServlet）
-- 它和 HandlerMapping 什么关系？（它用 HandlerMapping 找处理器，自己负责调度）
+- 它是 Servlet 吗？——是。
+- 为什么需要 HandlerAdapter？——让 DispatcherServlet 以统一方式调用不同 Handler 模型。
 
 **易错点**
 
-DispatcherServlet 是「入口 + 调度」，不要理解成「具体处理业务的组件」。
+“统一入口”是相对其 Servlet 映射而言，不是整个 Web 容器的绝对第一站。
 
 ## 129. HandlerMapping 有什么作用？
 
 **面试回答**
 
-HandlerMapping 负责建立请求（URL、方法等）与处理器（Handler，通常是 Controller 方法）之间的映射，根据请求找到该由谁处理。
+`HandlerMapping` 根据当前请求查找 Handler，并返回包含 Handler 与拦截器链的 `HandlerExecutionChain`；注解式 Controller 常由 `RequestMappingHandlerMapping` 处理。
 
-**理解**
+**原理与理解**
 
-它维护「请求路径 → 处理方法」的对应关系。Spring MVC 有多个 HandlerMapping 实现（如 RequestMappingHandlerMapping），启动时扫描 @RequestMapping 等注解，把路径和 Controller 方法登记下来，请求来了按匹配规则找到目标 Handler。
+映射条件不只包含 URL，还可包含 HTTP 方法、请求参数、请求头、`consumes` 和 `produces` 等。启动时框架注册映射，运行时选择最匹配项。
 
-**场景**
+**成立条件与边界**
 
-项目里 `@GetMapping("/dish/list")` 标注的方法，就是被 RequestMappingHandlerMapping 登记，请求到达时被定位到。
+Handler 不一定是 Controller 方法；资源处理器等也可成为 Handler。HandlerMapping 只负责选择，不负责参数绑定或方法执行。
+
+**实际场景（通用工程）**
+
+同一路径可按 GET、POST 或媒体类型映射到不同方法；冲突映射应在启动或匹配阶段暴露，而不是靠代码顺序选择。
 
 **常见追问**
 
-- Handler 是什么？（就是处理请求的 Controller 方法/对象）
-- HandlerMapping 返回什么？（HandlerExecutionChain，包含处理器和拦截器链）
+- 返回的只有 Handler 吗？——通常是 `HandlerExecutionChain`，还包含适用拦截器。
+- 多个 Mapping 如何使用？——DispatcherServlet 按已配置顺序查找能够处理请求的映射器。
 
 **易错点**
 
-HandlerMapping 只负责「找到处理器」，不负责「执行」，执行是 HandlerAdapter 的事。
+不要把映射规则缩成“路径到方法”的单一 Map。
 
 ## 130. Controller 是如何匹配到请求的？
 
 **面试回答**
 
-通过 @RequestMapping 及其组合注解（@GetMapping、@PostMapping 等）声明路径和方法，启动时被 HandlerMapping 登记，请求来时按 URL + HTTP 方法匹配到对应的 Controller 方法。
+`RequestMappingHandlerMapping` 读取类和方法上的 `@RequestMapping` 及组合注解，形成路径、HTTP 方法、参数、请求头和媒体类型等条件；请求必须满足组合后的条件才能命中 HandlerMethod。
 
-**理解**
+**原理与理解**
 
-RequestMappingHandlerMapping 启动时解析注解，建立「路径 + 请求方法 → Controller 方法」的映射表。请求到达，DispatcherServlet 拿 URL 和 HTTP 方法去匹配，命中后交给 HandlerAdapter 执行。路径还支持占位符（@PathVariable）等。
+类级条件提供共享范围，方法级条件进一步缩小。路径变量在匹配后提取，参数与请求体随后由 HandlerAdapter 解析。
 
-**场景**
+**成立条件与边界**
 
-项目里 `@PostMapping("/order/submit")` 匹配前端的下单请求，`@GetMapping("/dish/{id}")` 匹配按 id 查菜品。
+路径正确但 HTTP 方法不匹配通常对应 405；请求媒体类型不受支持可能是 415，响应媒体类型无法满足 `Accept` 可能是 406。实际结果还受异常处理和容器配置影响。
+
+**实际场景（通用工程）**
+
+`@RequestMapping("/orders")` 配合 `@GetMapping("/{id}")` 形成查询映射；写操作用相应 HTTP 语义和 `consumes` 约束 JSON。
 
 **常见追问**
 
-- @RequestMapping 的 method 属性做什么用？（限定 HTTP 方法）
-- 路径变量怎么匹配？（@PathVariable 配合 {id} 占位符）
+- 为什么同一路径能有多个方法？——其他映射条件不同。
+- 模糊匹配冲突怎么办？——框架按具体度规则选择，无法消歧时报告歧义。
 
 **易错点**
 
-匹配不仅看路径，还看 HTTP 方法；路径对但方法错（GET 请求打到 @PostMapping）会 405。
+Controller 匹配不仅看 URL 与注解名称。
 
 ## 131. `@Controller` 和 `@RestController` 有什么区别？
 
 **面试回答**
 
-@Controller 用于标记 MVC 控制器，方法默认返回视图名；@RestController 是 @Controller + @ResponseBody 的组合，方法返回值直接作为响应体（通常是 JSON），适合前后端分离接口。
+`@Controller` 声明 MVC Controller；`@RestController` 组合了 `@Controller` 与类级 `@ResponseBody`，因此其处理方法默认把返回值作为响应体，而不是按视图名解释。
 
-**理解**
+**原理与理解**
 
-@Controller 传统 MVC 里返回视图（页面）；如果想让 @Controller 的方法也返回 JSON，得手动在方法上加 @ResponseBody。@RestController 把这一步省了，类里所有方法都默认把返回对象序列化成 JSON 写进响应体。
+最终行为仍由返回值类型和 `HandlerMethodReturnValueHandler` 决定。`@ResponseBody` 返回值通常交给 `HttpMessageConverter`；普通 Controller 可以返回视图名、`ModelAndView`，也可在单个方法上加 `@ResponseBody`。
 
-**场景**
+**成立条件与边界**
 
-项目前后端分离，Controller 都用 @RestController，直接返回 JSON 给前端，不返回视图页面。
+`@RestController` 不等于“返回值一定是 JSON”：字符串、字节、JSON 或其他格式取决于返回类型、可用转换器和内容协商。特殊返回类型也有自己的处理器。
+
+**实际场景（通用工程）**
+
+前后端分离 API 常使用 `@RestController`；服务端页面使用 `@Controller` 与模板视图，两者也可在同一应用并存。
 
 **常见追问**
 
-- @ResponseBody 作用？（把返回值写入响应体，而不是当视图名解析）
-- @RestController 能返回页面吗？（不直接，它是返回数据；要页面用 @Controller）
+- `@ResponseBody` 做什么？——经返回值处理器把结果写入 HTTP 响应体。
+- REST Controller 能返回 `ResponseEntity` 吗？——可以，并能明确状态和响应头。
 
 **易错点**
 
-@RestController = @Controller + @ResponseBody，别以为它是全新的注解。
+“RestController 自动转 JSON”只在存在合适 JSON 转换器且协商选择它时成立。
 
 ## 132. `@RequestMapping` 有什么作用？
 
 **面试回答**
 
-@RequestMapping 把请求（URL 路径、HTTP 方法等）映射到 Controller 的处理方法上，是 Spring MVC 最基础的映射注解。
+`@RequestMapping` 在类或方法上声明请求映射条件，包括路径、HTTP 方法、参数、请求头、可消费媒体类型和可生产媒体类型；`@GetMapping` 等是针对方法的组合注解。
 
-**理解**
+**原理与理解**
 
-它可以用在类上（统一前缀）和方法上（具体路径），两者路径拼接成完整路径。通过 method 属性限定 GET/POST 等，通过 params、headers 等做更细的条件匹配。@GetMapping、@PostMapping 等是它的简写。
+类级映射定义共享条件，方法级映射通常进一步缩小范围。`value` 与 `path` 是别名，`consumes` 对应请求 `Content-Type`，`produces` 参与响应内容协商。
 
-**场景**
+**成立条件与边界**
 
-项目里类上 `@RequestMapping("/admin/dish")` 统一前缀，方法上 `@GetMapping("/page")` 拼成 `/admin/dish/page`。
+条件组合并非简单字符串拼接的全部语义；同一元素上不要堆叠多个 `@RequestMapping` 期待全部生效。路径尾斜杠、大小写和路径匹配策略也可能因配置与版本不同。
+
+**实际场景（通用工程）**
+
+类上声明 `/orders`，方法上用 `@PostMapping(consumes="application/json")` 限定创建接口接受的表示格式。
 
 **常见追问**
 
-- 类上和方法上的路径怎么组合？（拼接成完整路径）
-- @RequestMapping 能限定请求方法吗？（能，method = RequestMethod.GET 等）
+- 能否限制请求头？——可以使用 `headers` 条件。
+- `produces` 与 `Content-Type` 什么关系？——它描述可生成的响应媒体类型，并与客户端 `Accept` 协商。
 
 **易错点**
 
-类和方法上的路径会「拼接」，不是互相覆盖；注意别少写或重复斜杠。
+不要只把 `@RequestMapping` 记作 URL 注解。
 
 ## 133. `@GetMapping` 和 `@PostMapping` 有什么区别？
 
 **面试回答**
 
-都是 @RequestMapping 的简写，@GetMapping 限定只处理 GET 请求，@PostMapping 限定只处理 POST 请求，语义更清晰。
+它们分别是限定 GET 和 POST 的 `@RequestMapping` 组合注解。差异首先是 HTTP 方法语义：GET 应是安全且幂等的读取；POST 用于由目标资源处理表示，常见于创建、命令或非幂等操作。
 
-**理解**
+**原理与理解**
 
-GET 一般用于查询、参数放 URL 里、幂等；POST 一般用于提交/新增、参数放请求体里。用对应注解能表达意图，也让匹配更明确，避免方法不匹配的请求误入。它们都支持指定路径。
+映射注解只限制方法并提供条件，不决定参数必须放在哪里。GET 仍有请求头和查询参数，POST 也可有查询参数；请求体是否解析由方法参数与媒体类型决定。
 
-**场景**
+**成立条件与边界**
 
-项目里查询菜品列表、按 id 查详情用 @GetMapping；新增菜品、下单用 @PostMapping。
+POST 不等于“新增”，GET 也不是因“参数在 URL”才用于查询。缓存、重试、预取和安全工具依赖 HTTP 语义，不能用 GET 执行扣款、删除等副作用。
+
+**实际场景（通用工程）**
+
+查询订单使用 GET；提交订单命令可使用 POST，并通过幂等键额外处理重复提交，而不是假设 POST 天然幂等。
 
 **常见追问**
 
-- 它们和 @RequestMapping 什么关系？（是它的快捷方式，等价于 method 属性）
-- 还有其他简写吗？（@PutMapping、@DeleteMapping、@PatchMapping）
+- 还有哪些组合注解？——`@PutMapping`、`@PatchMapping`、`@DeleteMapping`。
+- 方法不匹配会怎样？——通常形成 405 响应。
 
 **易错点**
 
-GET 不该用来做有副作用的操作（如新增、删除），要把 GET 幂等、POST 变更这个语义用对。
+不要回答“GET 参数只能放 URL、POST 参数只能放请求体”。
 
 ## 134. `@RequestParam` 和 `@PathVariable` 有什么区别？
 
 **面试回答**
 
-@RequestParam 用来接收 URL 查询参数或表单参数（如 `?id=1`）；@PathVariable 用来接收 URL 路径中的占位符（如 `/dish/{id}`）。
+`@RequestParam` 读取 Servlet 请求参数，常来自查询字符串、表单或 multipart 字段；`@PathVariable` 读取已匹配路径模板中的变量。前者多表达筛选/选项，后者多标识资源路径的一部分。
 
-**理解**
+**原理与理解**
 
-@RequestParam 对应「问号后面的参数」或表单字段，可指定 name、required、defaultValue；@PathVariable 对应「路径里 {} 占位符」的值，通常用于 RESTful 风格按资源定位。两者取值的来源位置不同。
+两者都支持类型转换、名称和 required 语义。`@RequestParam` 可给默认值，给出默认值也会隐含非必需；`@PathVariable` 必须对应映射模板中的变量。
 
-**场景**
+**成立条件与边界**
 
-项目里分页查询 `?page=1&pageSize=10` 用 @RequestParam；按 id 查详情 `/dish/{id}` 用 @PathVariable。
+URL 设计是接口契约而非注解强制：复杂筛选可以使用查询对象，资源 ID 也不应因放进路径就跳过权限和存在性校验。
+
+**实际场景（通用工程）**
+
+`GET /orders/{id}` 用路径变量定位订单，`?status=PAID&page=1` 用请求参数筛选和分页。
 
 **常见追问**
 
-- @RequestParam 的 required 默认是？（默认 true，参数缺失会报错）
-- 什么时候用 @PathVariable？（路径里用 {} 占位的资源标识）
+- `@RequestParam(required)` 默认值？——默认 true，除非使用可选形式或默认值等。
+- 能获取多个同名参数吗？——可绑定为集合、数组或 MultiValueMap。
 
 **易错点**
 
-@PathVariable 取的是「路径占位符」，@RequestParam 取的是「查询参数」，别把 `?id=1` 和 `/{id}` 搞混。
+Servlet request parameter 不只等于“问号后的参数”。
 
 ## 135. `@RequestBody` 有什么作用？
 
 **面试回答**
 
-@RequestBody 把 HTTP 请求体里的内容（通常是 JSON）读取出来，反序列化成 Java 对象，绑定到方法参数上。
+`@RequestBody` 让 Spring MVC 通过 `HttpMessageConverter` 读取 HTTP 请求体，并按声明类型和请求媒体类型反序列化为方法参数。
 
-**理解**
+**原理与理解**
 
-POST 请求的 JSON 数据在请求体里，@RequestBody 配合 HttpMessageConverter（如 Jackson）把 JSON 字符串转成目标对象。它常用于接收前端提交的复杂对象。
+框架根据目标类型和 `Content-Type` 选择能读取的转换器；JSON 常由 Jackson 转换器处理。配合 `@Valid`/`@Validated` 可在转换后触发 Bean Validation。
 
-**场景**
+**成立条件与边界**
 
-项目里新增菜品、下单时，前端把整个对象序列化成 JSON 提交，后端用 `@RequestBody DishDTO dishDTO` 接收。
+请求体不只可以是 JSON，也可能是文本、字节或 XML，取决于转换器。一个请求通常只设计一个 Body 参数；流读取、重复读取和大请求体还受 Servlet 与安全限制。
+
+**实际场景（通用工程）**
+
+创建订单接口接收 JSON DTO，显式限制 `consumes`，校验结构后再把 DTO 转为业务命令，避免直接绑定持久化实体。
 
 **常见追问**
 
-- @RequestBody 靠什么转换 JSON？（HttpMessageConverter，如 Jackson）
-- 一个方法能有两个 @RequestBody 吗？（不能，请求体只能读一次）
+- 解析失败常见原因？——媒体类型不支持、JSON 语法或类型不匹配、转换器缺失。
+- 与 `@RequestParam` 的区别？——前者读取消息体，后者读取请求参数。
 
 **易错点**
 
-@RequestBody 读的是「请求体」，不是查询参数；一个方法只能有一个 @RequestBody 参数。
+`@RequestBody` 不负责鉴权或业务校验，也不是“只用于 POST JSON”。
 
 ## 136. Spring MVC 如何完成参数绑定？
 
 **面试回答**
 
-通过参数解析器（HandlerMethodArgumentResolver）把请求里的数据（路径变量、查询参数、请求体等）按注解和类型，转换成 Controller 方法的参数。
+`HandlerAdapter` 通过一组 `HandlerMethodArgumentResolver` 解析方法参数；简单请求参数和模型属性还会使用 `WebDataBinder`、`ConversionService`，请求体则委托 `HttpMessageConverter`。
 
-**理解**
+**原理与理解**
 
-HandlerAdapter 执行 Handler 前，会用一系列 ArgumentResolver 逐个处理方法参数：@PathVariable 用 PathVariableResolver、@RequestParam 用对应解析器、@RequestBody 用消息转换器等。它们从 request 里取数据、做类型转换、绑定到参数。
+不同解析器支持 `@PathVariable`、`@RequestParam`、`@ModelAttribute`、`@RequestBody`、请求头以及 Servlet 原生对象。解析后可执行类型转换、数据绑定和校验。
 
-**场景**
+**成立条件与边界**
 
-项目里 Controller 方法声明了 @RequestParam、@PathVariable、@RequestBody 参数，Spring MVC 自动按注解把它们绑定好。
+不是所有参数都经过 JSON 转换，也不是所有绑定失败都抛同一种异常。字段白名单、日期格式、集合大小和嵌套深度需要控制，避免 over-binding 与资源消耗。
+
+**实际场景（通用工程）**
+
+分页查询用查询对象绑定并限制最大页大小；JSON 命令用 DTO + Bean Validation，自定义用户上下文可通过专用 ArgumentResolver 提供。
 
 **常见追问**
 
-- 参数解析的核心接口？（HandlerMethodArgumentResolver）
-- 自定义参数解析器怎么做？（实现该接口并注册）
+- 如何自定义参数解析？——实现 `HandlerMethodArgumentResolver` 并注册。
+- 参数绑定和业务校验相同吗？——不同，绑定解决数据到类型，业务校验判断规则。
 
 **易错点**
 
-参数绑定不是「魔法」，是一套可扩展的解析器机制，理解这点就知道为什么能自定义。
+“参数绑定靠反射”过于粗糙，核心是可扩展的解析、转换与绑定链路。
 
 ## 137. Java 对象为什么可以自动转换成 JSON？
 
 **面试回答**
 
-因为返回对象时，Spring MVC 用消息转换器（HttpMessageConverter，默认是 Jackson）把 Java 对象序列化成 JSON 字符串，写入响应体。
+在 `@ResponseBody` 或 `ResponseEntity` 等响应体分支中，返回值处理器通过内容协商选择可写的 `HttpMessageConverter`；若 Jackson 转换器可用且选择 JSON，它用配置好的 `ObjectMapper` 序列化对象。
 
-**理解**
+**原理与理解**
 
-@RestController 或 @ResponseBody 触发返回值处理，Spring 根据 Content-Type 选择合适的 HttpMessageConverter，Jackson 的 MappingJackson2HttpMessageConverter 通过反射读取对象字段，按规则序列化成 JSON。序列化依赖 getter 或字段，还可能受注解（如 @JsonIgnore）影响。
+转换器选择受返回类型、`Accept`、`produces` 和已注册媒体类型影响。Jackson 的属性发现、命名、日期、空值和注解规则都可定制。
 
-**场景**
+**成立条件与边界**
 
-项目里 Controller 返回 List<Dish> 或 Result 对象，Jackson 自动转成 JSON 返回给前端。
+Spring MVC 不保证所有对象都能序列化，也不保证一定使用 Jackson。循环引用、懒加载代理、不可访问属性和不受信任类型都可能产生问题，响应 DTO 比直接暴露实体更稳定。
+
+**实际场景（通用工程）**
+
+Controller 返回明确的响应 DTO，统一配置时间和枚举格式，并用接口测试锁定 JSON 契约。
 
 **常见追问**
 
-- 默认用什么库序列化？（Jackson）
-- 怎么排除某个字段不序列化？（@JsonIgnore 或 @JsonIgnoreProperties）
+- 如何忽略字段？——可用 Jackson 注解或专用 DTO，后者更能隔离领域模型。
+- 谁设置 Content-Type？——选中的消息转换器与返回值处理链。
 
 **易错点**
 
-对象转 JSON 靠 Jackson 这类库，不是 Spring 自己写的；序列化规则要了解字段/getter 和注解。
+不是“Spring 用反射自动转 JSON”一句话就能覆盖转换器选择和 ObjectMapper 配置。
 
 ## 138. JSON 请求为什么可以转换成 Java 对象？
 
 **面试回答**
 
-因为 @RequestBody 配合消息转换器（默认 Jackson）把请求体里的 JSON 字符串反序列化成 Java 对象，再绑定到方法参数。
+`@RequestBody` 参数解析器选择支持 `application/json` 和目标类型的消息转换器，Jackson 转换器再根据 `ObjectMapper` 配置把 JSON 反序列化为 Java 对象。
 
-**理解**
+**原理与理解**
 
-请求进来时，RequestBody 对应的参数解析器读请求体，交给 Jackson 的 HttpMessageConverter，Jackson 根据目标类型反射创建对象、把 JSON 字段映射到属性。反序列化依赖无参构造 + setter/字段，规则和序列化对称。
+Jackson 可使用构造器、`@JsonCreator`、record 组件、setter 或字段等多种创建和赋值方式；字段名、未知属性、泛型类型与日期格式都会影响结果。
 
-**场景**
+**成立条件与边界**
 
-前端提交的 JSON 菜品数据，后端用 @RequestBody DishDTO 接收，Jackson 自动填好字段。
+“必须有无参构造 + setter”不成立。转换成功也只说明结构可绑定，仍需 Bean Validation、业务校验和授权；未知字段是否报错取决于 ObjectMapper 配置。
+
+**实际场景（通用工程）**
+
+请求 DTO 明确声明允许字段和校验规则，接口测试覆盖缺字段、未知字段、类型错误和超大载荷。
 
 **常见追问**
 
-- 反序列化需要无参构造吗？（通常需要）
-- 字段名不一致怎么办？（@JsonProperty 映射）
+- 字段名不同怎么办？——使用稳定 DTO 或 `@JsonProperty` 等映射配置。
+- 泛型对象如何保留类型？——Spring 根据方法参数的泛型类型信息传给转换器。
 
 **易错点**
 
-JSON 转对象靠 Jackson 的「反射 + 无参构造 + setter」，字段名对不上会映射失败。
+JSON 到对象不是“序列化的完全对称过程”，构造和可写属性规则可能不同。
 
 ## 139. Spring MVC 如何处理返回值？
 
 **面试回答**
 
-方法返回后，Spring MVC 根据返回类型和注解决定怎么处理：返回视图名则视图解析，返回 @ResponseBody/对象则用消息转换器序列化成响应体。
+Controller 返回后，`HandlerMethodReturnValueHandler` 根据注解和类型选择处理方式：写响应体、设置状态与头、填充 Model、返回视图、启动异步处理等。
 
-**理解**
+**原理与理解**
 
-有 @ResponseBody（或 @RestController）时，返回值交给 HandlerMethodReturnValueHandler，用 HttpMessageConverter 把对象转成 JSON/文本写入响应；没有则把返回值当视图名交给 ViewResolver 解析。返回值处理也是一套可扩展机制。
+`@ResponseBody`、`HttpEntity`/`ResponseEntity` 通常经 `HttpMessageConverter` 写出；视图分支形成 `ModelAndView` 后由 `ViewResolver` 与 View 渲染。异常由 HandlerExceptionResolver 链处理。
 
-**场景**
+**成立条件与边界**
 
-项目里 Controller 返回 Result<T> 对象，被统一序列化成 JSON 响应体。
+返回 String 在 `@RestController` 中通常是响应体，在普通 `@Controller` 中可能是视图名，但仍受方法注解和返回值处理器影响。统一包装响应可使用显式 DTO 或 `ResponseBodyAdvice`，需避免重复包装和文件流等特殊类型。
+
+**实际场景（项目核验项）**
+
+项目已确认存在统一响应结构；还应核对是 Controller 显式返回、Advice 包装还是其他机制，再描述其状态码和异常映射。
 
 **常见追问**
 
-- 返回值处理核心接口？（HandlerMethodReturnValueHandler）
-- 想统一包装返回结构怎么做？（自定义返回值处理器或统一在 Controller 里包装）
+- 如何自定义响应状态？——使用 `ResponseEntity`、`@ResponseStatus` 或异常映射。
+- 响应对象何时转 JSON？——响应体处理分支选中 JSON 转换器时。
 
 **易错点**
 
-返回 String 时要注意：@RestController 下 String 是「响应体」，@Controller 下可能被当「视图名」，别搞混。
+Controller 返回对象不等于框架必然返回 200 JSON。
 
 ## 140. `Content-Type` 是什么？
 
 **面试回答**
 
-Content-Type 是 HTTP 头，告诉接收方「请求体/响应体里数据的格式」，常见如 application/json、text/html、application/x-www-form-urlencoded。
+`Content-Type` 表示当前 HTTP 消息体的媒体类型，并可携带该媒体类型定义的参数，例如某些文本类型的字符集；请求和响应都可以使用它。
 
-**理解**
+**原理与理解**
 
-它是媒体类型（MIME type）的标识，让接收方知道按什么格式解析数据。请求里标明提交数据的格式，响应里标明返回数据的格式。前后端靠它约定数据格式。
+服务端依据请求 `Content-Type` 选择读取转换器，依据客户端 `Accept`、处理方法的 `produces` 和可用转换器协商响应类型。前者描述“我发送的是什么”，后者描述“我希望接收什么”。
 
-**场景**
+**成立条件与边界**
 
-项目里前端 POST 提交 JSON 时，请求头 Content-Type 是 application/json；后端返回 JSON 时响应头 Content-Type 也是 application/json。
+Content-Type 不是通用“文件格式保证”，声明与实际内容不一致仍会解析失败。请求类型不支持通常对应 415，无法生成可接受响应通常对应 406。
+
+**实际场景（通用工程）**
+
+发送 JSON 时设置 `Content-Type: application/json`，下载文件时返回准确媒体类型和内容处置头，并限制可接受的上传类型与大小。
 
 **常见追问**
 
-- application/json 表示什么？（数据是 JSON 格式）
-- 表单提交用什么 Content-Type？（application/x-www-form-urlencoded 或 multipart/form-data）
+- 表单常见类型？——`application/x-www-form-urlencoded` 和 `multipart/form-data`。
+- `Accept` 与它的区别？——Accept 面向期望的响应表示。
 
 **易错点**
 
-Content-Type 是「数据格式」声明，不是「编码」；格式不对接收方会解析失败（如 415）。
+不要把 Content-Type 与 Content-Encoding、字符编码或 Accept 混为一谈。
 
 ## 141. `application/json` 是什么意思？
 
 **面试回答**
 
-表示数据格式是 JSON（JavaScript Object Notation），即「请求体/响应体里的内容是 JSON 文本」，是前后端交互最常用的数据格式。
+`application/json` 是注册的 JSON 媒体类型，表示消息体使用 JSON 文本语法；它常作为请求 Content-Type 或响应协商结果。
 
-**理解**
+**原理与理解**
 
-它是 Content-Type 的一种值，告诉接收方按 JSON 语法解析数据。后端用 @RequestBody 接收时，要求请求的 Content-Type 是 application/json，否则参数解析可能失败；返回时 Spring 也会自动带上这个头。
+Spring MVC 在有可用 JSON 转换器时可读取或写出该类型。客户端发送 `Accept: application/json` 表达希望得到 JSON，服务端实际响应仍由映射条件、协商与转换器共同决定。
 
-**场景**
+**成立条件与边界**
 
-项目里所有接口都用 JSON 交互：前端把对象序列化成 JSON 提交，后端返回 JSON，Content-Type 都是 application/json。
+不带该 Content-Type 不一定总返回 415，取决于端点 `consumes`、参数类型和可用转换器；反之，写了头也不能让非法内容变成 JSON。标准 `application/json` 没有定义 charset 参数，JSON 在网络交换中通常使用 UTF-8。
+
+**实际场景（通用工程）**
+
+接口契约同时约定媒体类型、字段语义、错误结构和版本策略，并通过契约测试验证，而不是只检查一个请求头。
 
 **常见追问**
 
-- application/json 和 text/plain 什么区别？（前者是结构化 JSON，后者是纯文本）
-- 发 JSON 请求不带头会怎样？（后端可能解析失败，返回 415）
+- 与 `text/plain` 的区别？——媒体类型和处理语义不同，后者不是结构化 JSON 契约。
+- JSON 头正确但解析失败为什么？——内容语法、字段类型或转换配置仍可能错误。
 
 **易错点**
 
-application/json 是「媒体类型」不是「字符编码」；字符编码是另一个头（charset）。
+`application/json` 只声明表示类型，不保证内容合法、字段可信或业务有效。
