@@ -14,205 +14,241 @@ tags:
 
 **面试回答**
 
-Lambda 是 Java 8 引入的匿名函数的简洁写法，用 `参数 -> 方法体` 表示，代替原来写匿名内部类的繁琐代码。
+Lambda 是一种表达式，用简洁语法为函数式接口提供实现，例如 `(x, y) -> x + y`。它必须有目标类型，不能脱离函数式接口单独存在，也不等同于匿名内部类。
 
-**理解**
+**原理与理解**
 
-它本质是一个「函数式接口」的实例。原来实现一个接口要 new 一个匿名内部类写一堆样板代码，Lambda 直接 `(x, y) -> x + y` 搞定。它让代码更简洁，尤其是配合 Stream 和集合操作。
+编译器根据目标函数式接口推断参数和返回类型。Lambda 使用词法作用域：其中的 `this` 指向外围对象，不会像匿名内部类那样引入新的 `this`。JDK 通常借助 `invokedynamic` 实现，但这属于编译器和运行时策略，不是业务代码应依赖的对象模型。
 
-**场景**
+**成立条件与边界**
 
-项目里 `list.forEach(dish -> System.out.println(dish.getName()))`、`Comparator.comparing(d -> d.getPrice())` 都用 Lambda 简化代码。
+Lambda 可以捕获局部变量，但该变量必须是 final 或 effectively final；成员字段不受这条局部变量规则约束。捕获值不代表复制可变对象，其内部状态仍可能被修改并产生并发问题。
+
+**实际场景（通用工程）**
+
+排序时把 `Comparator.comparing(Dish::getPrice)` 作为策略传入；复杂分支或需要复用、单测的逻辑更适合命名方法，而不是堆成长 Lambda。
 
 **常见追问**
 
-- Lambda 和匿名内部类区别？（Lambda 更简洁，只能用于函数式接口）
-- Lambda 能捕获外部变量吗？（能，但变量必须 effectively final）
+- Lambda 与匿名内部类的 `this` 一样吗？——不一样，Lambda 继承外围词法作用域。
+- 为什么捕获局部变量要 effectively final？——Lambda 可能晚于栈帧执行，Java 以稳定的捕获值避免局部变量生命周期和可见性混乱。
 
 **易错点**
 
-Lambda 只能用在「函数式接口」上，一个接口有多个抽象方法就不能用 Lambda 表示。
+不要说“Lambda 本质就是匿名内部类”；语言语义和运行时实现都不同。
 
 ## 89. 什么是函数式接口？
 
 **面试回答**
 
-只有一个抽象方法的接口就是函数式接口，可以用 Lambda 表达式实现，通常加 `@FunctionalInterface` 注解标注。
+函数式接口是在考虑继承关系和 `Object` 公有方法后，只具有一个抽象方法的接口，因此可作为 Lambda 或方法引用的目标类型。
 
-**理解**
+**原理与理解**
 
-Lambda 的本质就是函数式接口的实例，所以接口必须有且只有一个抽象方法，编译器才能推断 Lambda 对应哪个方法。`@FunctionalInterface` 注解不是必须的，但加上能让编译器帮你检查，防止多加了抽象方法。Java 内置了很多，如 `Runnable`、`Comparator`、`Function`、`Predicate`。
+`default`、`static` 和 `private` 方法不计入抽象方法数量；与 `Object` 公有方法签名相同的声明也不妨碍函数式接口成立。`@FunctionalInterface` 可让编译器验证契约，但不是必须标注。
 
-**场景**
+**成立条件与边界**
 
-Stream 的 `filter` 参数是 `Predicate`（函数式接口），传 `dish -> dish.getStatus() == 1` 这个 Lambda 就能直接匹配。
+多个可重写等价的继承方法有时可归并为一个函数方法，不能只数源码中的 `abstract` 关键字。返回类型和 `throws` 还要满足函数方法的兼容规则。
+
+**实际场景（通用工程）**
+
+`Predicate<T>` 表示判定，`Function<T,R>` 表示转换，`Consumer<T>` 表示消费，`Supplier<T>` 表示供给；选择语义匹配的接口比自定义模糊接口更清楚。
 
 **常见追问**
 
-- 函数式接口可以有 default 方法吗？（可以，default/static 方法不算抽象方法）
-- 常见函数式接口有哪些？（Function、Predicate、Consumer、Supplier）
+- `Comparator` 为什么是函数式接口？——其函数方法是 `compare`，`equals` 是对 `Object` 方法的重声明，其他多为默认或静态方法。
+- 接口能有多个 default 方法吗？——可以。
 
 **易错点**
 
-「只有一个抽象方法」是核心，default 和 static 方法不影响；有多个抽象方法就不是函数式接口，不能写 Lambda。
+“源码中只能出现一个方法”是错的；限制的是符合规则的抽象函数方法。
 
 ## 90. Stream 是什么？
 
 **面试回答**
 
-Stream 是 Java 8 提供的对集合、数组做「流式」处理的 API，支持链式地过滤、映射、聚合等操作，代码更简洁。
+Stream 是支持顺序或并行聚合操作的元素序列。它不存储数据，而是从集合、数组、生成器、文件等数据源建立一次性消费的处理流水线。
 
-**理解**
+**原理与理解**
 
-Stream 不是数据结构，它不存数据，而是一系列操作的流水线。操作分两类：中间操作（filter、map、sorted，返回新 Stream，惰性）和终止操作（forEach、collect、count，触发真正执行）。只有调用终止操作，整条流水线才会跑。
+流水线由数据源、中间操作和终止操作组成。中间操作通常惰性地描述转换，终止操作触发遍历；实现还能融合操作并利用短路减少处理量。Stream 使用后不能再次消费。
 
-**场景**
+**成立条件与边界**
 
-项目里 `dishList.stream().filter(...).map(...).collect(Collectors.toList())` 链式处理菜品列表，替代一堆 for 循环。
+Stream 可能有序也可能无序、有限也可能无限；惰性不等于绝不执行副作用。对 I/O 来源创建的 Stream 还可能需要 `try-with-resources` 关闭。
+
+**实际场景（通用工程）**
+
+对查询结果做过滤、映射和分组适合 Stream；需要细粒度跳转、复杂状态机或极致热点性能时，普通循环可能更清楚。
 
 **常见追问**
 
-- Stream 存数据吗？（不存，是对数据源的流水线操作）
-- 中间操作和终止操作区别？（中间操作惰性，终止操作触发执行）
+- 中间操作为什么不立即执行？——便于组合、融合、短路和选择执行策略。
+- 一个 Stream 能执行两个终止操作吗？——不能，通常会抛 `IllegalStateException`。
 
 **易错点**
 
-Stream 本身不是集合，是「操作管道」；忘记调用终止操作时，中间操作不会执行。
+Stream 不是集合，也不是可反复遍历的数据快照。
 
 ## 91. Stream 和普通集合遍历有什么区别？
 
 **面试回答**
 
-普通遍历用 for/foreach 手动控制流程，命令式；Stream 用声明式链式 API 描述「做什么」，中间操作惰性执行，代码更简洁、可读性更高。
+循环是命令式地描述“怎样遍历”，Stream 更偏声明式地描述“筛选、转换、归约什么”。Stream 支持惰性流水线和可选并行执行，但不保证更快或更易读。
 
-**理解**
+**原理与理解**
 
-普通 for 循环要自己写「怎么取、怎么判、怎么存」；Stream 声明式地写「过滤什么、映射什么、收集成什么」，逻辑更清晰。Stream 还能并行处理（parallelStream），而普通遍历是串行。不过 Stream 在简单场景下不一定比 for 快，选择时看可读性和场景。
+Stream 由库控制遍历，可融合多个操作并短路；循环由代码直接控制索引、跳转和状态。并行流默认通常使用公共 `ForkJoinPool`，会产生拆分、合并、线程调度和顺序维护成本。
 
-**场景**
+**成立条件与边界**
 
-多条件筛选、映射、统计时用 Stream 一行搞定，比嵌套 for 循环清楚得多。
+数据量小、操作轻、需要复杂控制流或包含阻塞 I/O 时，并行流常无优势；有共享副作用、非结合归约或顺序敏感逻辑时还可能错误。是否并行应以基准和运行环境验证。
+
+**实际场景（通用工程）**
+
+列表的过滤、映射、分组可优先评估 Stream；批量远程调用不应因为写成 `parallelStream()` 就默认安全，还要控制线程池、限流、超时和上下文传播。
 
 **常见追问**
 
-- Stream 一定比 for 快吗？（不一定，简单遍历 for 可能更快）
-- Stream 怎么并行？（parallelStream 或 parallel()）
+- Stream 一定比 `for` 快吗？——不一定。
+- 并行流适合什么？——可拆分、数据量足够、计算较重、无共享副作用且归约满足结合律的任务。
 
 **易错点**
 
-Stream 的优势是「可读性和声明式」，不是「一定更快」，别把性能当 Stream 的唯一卖点。
+声明式是表达方式，不是性能承诺；“一键 parallel 就能加速”是高频误区。
 
 ## 92. `filter()` 有什么作用？
 
 **面试回答**
 
-`filter()` 是 Stream 的中间操作，按条件过滤元素，只保留满足条件的元素，返回一个新的 Stream。
+`filter` 是接收 `Predicate` 的无状态中间操作，只让满足条件的元素进入下游，并返回新的 Stream。
 
-**理解**
+**原理与理解**
 
-`filter` 接收一个 `Predicate`（返回 boolean 的 Lambda），对每个元素判断，true 保留、false 丢弃。它是惰性的，不会立即执行，要配合终止操作（如 collect）才生效。
+它通常惰性执行；终止操作请求元素时才逐个测试。对有 encounter order 的流，过滤后保留剩余元素的相对顺序；无序流没有这项顺序语义。
 
-**场景**
+**成立条件与边界**
 
-项目里 `dishList.stream().filter(d -> d.getStatus() == 1).collect(...)` 过滤出「起售状态」的菜品。
+Predicate 应保持无干扰、通常也应无状态。`filter` 不直接修改数据源，但谓词代码仍可能修改元素或外部状态，这会破坏可推理性并妨碍并行执行。
+
+**实际场景（通用工程）**
+
+`orders.stream().filter(Order::isPayable).toList()` 可筛选可支付订单；若条件依赖数据库或远程调用，应先考虑批量查询，避免 N 次 I/O。
 
 **常见追问**
 
-- filter 返回什么？（新的 Stream）
-- filter 会改原集合吗？（不会）
+- `filter` 会立即遍历吗？——通常不会，要由终止操作触发。
+- 会改变原集合吗？——`filter` 自身不会，但用户提供的谓词可能有副作用。
 
 **易错点**
 
-filter 是「中间操作」，不调用终止操作不会真正过滤，很多新手写了 filter 没 collect 以为没生效。
+不能把“API 不修改数据源”扩大成“整段 Lambda 绝对无副作用”。
 
 ## 93. `map()` 有什么作用？
 
 **面试回答**
 
-`map()` 是中间操作，把流里的每个元素「转换」成另一个元素，返回转换后的新 Stream，常用于提取字段或类型转换。
+`map` 是中间操作，对上游每个元素应用一次 `Function`，把它转换为一个下游元素；`flatMap` 则把每个元素映射为流后再拍平。
 
-**理解**
+**原理与理解**
 
-`map` 接收一个 `Function`（输入一个元素、输出另一个元素），一对一映射，元素个数不变。比如把 `List<Dish>` 映射成 `List<Long>`（提取 id）。
+单看 `map` 这一阶段是一进一出，类型可以变化；整个流水线的最终数量仍可能被上下游的 `filter`、`distinct`、`limit` 等改变。
 
-**场景**
+**成立条件与边界**
 
-项目里 `dishList.stream().map(Dish::getId).collect(Collectors.toList())` 提取所有菜品 id。
+映射函数应无干扰、通常无状态。`map` 可以返回 `null`，但这会把空值带到下游；“可能无结果”时可用过滤、`Optional.stream` 或 `mapMulti` 等更明确的方式。
+
+**实际场景（通用工程）**
+
+`orders.stream().map(Order::getId).toList()` 提取订单号；`orders.stream().flatMap(o -> o.getItems().stream())` 汇总明细。
 
 **常见追问**
 
-- map 和 flatMap 区别？（map 一对一，flatMap 把嵌套结构拍平）
-- map 会改变元素数量吗？（不会，一对一映射）
+- `map` 和 `flatMap` 的核心差异？——一对一转换与一对多后拍平。
+- `map` 保证最终元素数量不变吗？——只保证该阶段每个上游元素产生一个结果，不保证整条流水线。
 
 **易错点**
 
-map 是「转换每个元素」，元素个数不变；要拍平嵌套集合用 flatMap，别搞混。
+不要脱离流水线上下文绝对回答“map 不改变元素数量”。
 
 ## 94. `forEach()` 有什么作用？
 
 **面试回答**
 
-`forEach()` 是终止操作，遍历流中的每个元素并执行指定操作，常用于打印、消费、累加等副作用。
+`forEach` 是终止操作，为每个元素执行 `Consumer`。并行流中的执行顺序和线程不保证；需要保持 encounter order 时可用 `forEachOrdered`，但可能降低并行收益。
 
-**理解**
+**原理与理解**
 
-`forEach` 接收 `Consumer`，对流里每个元素执行一次操作，并触发整条流水线执行。它是终止操作，调用后流就结束、不能再复用。
+调用后流水线被消费，不能复用。它适合真正的消费动作，不适合用共享可变状态手写归约；局部变量还必须 effectively final，因此 `total += value` 通常本就无法在 Lambda 中编译。
 
-**场景**
+**成立条件与边界**
 
-项目里 `list.forEach(System.out::println)` 打印，或 `list.forEach(item -> total += item.getPrice())` 做累加。
+修改流元素的内部状态在语法上可行，但需自行保证并发与业务语义；遍历期间结构性修改非并发数据源可能导致 `ConcurrentModificationException`，也不能依赖一定检测到。
+
+**实际场景（通用工程）**
+
+打印或调用无状态消费者可用 `forEach`；金额求和使用 `mapToLong(...).sum()` 或 `reduce`，不要用共享计数器累加。
 
 **常见追问**
 
-- forEach 是中间还是终止操作？（终止）
-- forEach 能改元素本身吗？（能改对象内部状态，但不推荐在 forEach 里改集合结构）
+- 并行流如何保证输出顺序？——`forEachOrdered`，前提是流有 encounter order。
+- 为什么不建议在 `forEach` 中累加？——共享副作用难并行、易竞态，也违背归约抽象。
 
 **易错点**
 
-forEach 是终止操作，调用后流就不能再用了；不要在 forEach 里增删集合元素（会抛异常）。
+`forEach` 不等于按列表顺序执行，尤其在并行流中。
 
 ## 95. Stream 会修改原集合吗？
 
 **面试回答**
 
-不会。Stream 操作是基于原集合生成新的流和结果，不修改原集合本身。
+Stream 的标准中间操作不会自动回写原集合，收集操作通常生成结果；但用户提供的 Lambda 完全可能修改元素、外部变量或数据源，所以不能笼统说“Stream 一定不修改任何东西”。
 
-**理解**
+**原理与理解**
 
-Stream 是函数式的、不可变的操作：filter、map 等都返回新 Stream，collect 生成新集合，原集合内容不变。这也符合「无副作用」的设计，多个 Stream 操作可以安全复用同一个数据源。
+Stream 要求行为参数满足 non-interference，并通常要求 stateless。数据源在流水线执行期间被不恰当地修改，结果可能错误、未定义或触发 fail-fast 检测，取决于数据源特性。
 
-**场景**
+**成立条件与边界**
 
-项目里对流做过滤、映射后 collect 到新 List，原来的 dishList 不受影响。
+`map`、`filter` 返回新 Stream，不代表元素对象被复制；新旧集合仍可能共享同一批可变对象。并发集合或 late-binding spliterator 有不同一致性语义，需要查具体 API。
+
+**实际场景（通用工程）**
+
+若要更新实体，应显式循环或生成不可变副本，让副作用边界清楚；若只是派生视图，则收集到新结果并避免修改共享对象。
 
 **常见追问**
 
-- 如果原集合被外部改了，Stream 会怎样？（遍历中修改可能抛 ConcurrentModificationException）
-- 怎么拿到处理后的结果？（用 collect 收集成新集合）
+- `collect(Collectors.toList())` 的列表一定可变吗？——API 不保证具体类型或可变性。
+- `Stream.toList()` 呢？——返回不可修改的 List。
 
 **易错点**
 
-Stream 不修改原集合，但要拿结果必须用 collect 等终止操作收集，否则看不到任何变化。
+“原集合引用没变”不代表其中的可变元素没有被改。
 
 ## 96. Optional 是什么？解决什么问题？
 
 **面试回答**
 
-Optional 是 Java 8 的容器类，用来包装「可能为 null」的值，避免直接返回 null 导致空指针，让调用方显式处理空值。
+`Optional<T>` 是表示“有一个非 null 值或没有值”的 value-based 容器，主要用于方法返回值，让缺失语义显式化并鼓励组合式处理。
 
-**理解**
+**原理与理解**
 
-传统写法方法可能返回 null，调用方忘了判空就 NPE。Optional 把「值可能不存在」这个信息显式化：`Optional.ofNullable(x)` 包装，`orElse(默认值)`、`isPresent()`、`ifPresent()`、`map()` 等安全处理。它不消除 null，而是逼你面对 null。
+`ofNullable` 可包装可能为空的引用，`map`、`flatMap`、`filter`、`orElseThrow` 等用于组合。`orElse` 会先计算备用值，`orElseGet` 只在为空时调用 Supplier。
 
-**场景**
+**成立条件与边界**
 
-项目里按 id 查询可能查不到，返回 `Optional<Dish>`，调用方用 `orElseThrow(...)` 抛业务异常，比返回 null 更清晰。
+Optional 不能自动消除 `NullPointerException`：`of(null)`、错误的 `get()` 或返回 null Optional 都会出问题。它通常不适合作为实体字段、序列化结构或普通参数；高频原始类型可用 `OptionalInt` 等避免装箱。
+
+**实际场景（通用工程）**
+
+单值查询允许缺失时可返回 `Optional<Order>`，调用方用 `orElseThrow` 映射为“订单不存在”；集合查询通常直接返回空集合，而不是 `Optional<List<T>>`。
 
 **常见追问**
 
-- Optional 能完全避免 NPE 吗？（不能，滥用 Optional.of 传 null 仍会 NPE）
-- Optional 用在哪些场景？（方法返回值，一般不用于字段或方法参数）
+- `orElse` 与 `orElseGet` 的区别？——前者备用表达式会急切求值，后者惰性调用。
+- 可以返回 null Optional 吗？——不可以，应返回 `Optional.empty()`。
 
 **易错点**
 
-Optional 是「返回值」场景的优化，不建议到处用（字段、方法参数）；`Optional.of(null)` 依然会抛 NPE。
+Optional 是表达缺失的 API，不是到处替换 null 的类型，也不应无条件调用 `get()`。
