@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成 Spring Boot、Spring MVC、参数校验与 Filter/Interceptor 题目 116～157 共 42 题的第一轮准确性校验。
+- 校准自动配置与 Starter 分工、外部化配置、MVC 请求处理与消息转换、Jakarta Validation 异常分支、Servlet Filter 和 HandlerInterceptor 生命周期。
+- 修正“Starter 负责版本管理”“GET/POST 决定参数位置”“Jackson 必须无参构造 + setter”“校验失败只有一种异常”和“Interceptor 是理想安全边界”等绝对化表述。
 - 完成 Java 异常、Java 8 与 Spring 基础题目 79～115 共 37 题的第一轮准确性校验。
 - 校准 Throwable 分类、finally 控制流、Lambda/函数式接口、Stream 副作用、IoC/DI、依赖注入、配置模式、Bean 作用域与生命周期边界。
 - 修正“Error 不能捕获”“finally 一定执行”“Lambda 等于匿名内部类”“Stream 不会修改对象”“@Configuration 永远保证单例”和“单例 Bean 天然线程安全”等绝对化表述。
