@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成 MySQL SQL 基础、表设计与 JVM 题目 225～248、472～493 共 46 题的第一轮准确性校验。
+- 校准 SELECT 逻辑顺序、分组函数依赖、连接基数、深分页、DDL 隐式提交、InnoDB 聚簇键、NULL/字符类型、JVM 规范内存区、引用语义、元空间与类加载委派边界。
+- 修正“SQL 按口诀物理执行”“INNER JOIN 行数不超过原表”“TRUNCATE 不写日志”“JDK 8 后方法区等于元空间”“弱引用下次 GC 必回收”和“双亲委派保证全局类唯一”等绝对化表述。
 - 完成 Spring AOP、Java 反射与 MyBatis 题目 158～181、201～224 共 48 题的第一轮准确性校验。
 - 校准 Spring 代理边界、通知与切点语义、Java 模块化反射限制、Mapper 代理、参数绑定、动态 SQL、主键回填、两级缓存与 PageHelper 线程/方言边界。
 - 修正“有接口必然使用 JDK 代理”“setAccessible 可访问所有 private”“#{} 绝对防注入”“二级缓存必须序列化”和“PageHelper 固定执行 count + LIMIT”等绝对化表述。
