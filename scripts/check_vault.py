@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+LEARNING_QUEUE = ROOT / "00-第一轮学习队列.md"
 EXCLUDED_PARTS = {".git", ".github", ".obsidian", ".idea", ".claude"}
 REQUIRED_FIELDS = {"category", "priority", "status", "tags"}
 VALID_PRIORITIES = {"P0", "P1", "P2"}
@@ -147,6 +148,36 @@ def main() -> int:
             )
             errors.append(f"题号 {number} 重复：{detail}")
 
+    queue_path = LEARNING_QUEUE.resolve()
+    queue_notes: list[Path] = []
+    if queue_path not in texts:
+        errors.append(f"{relative(LEARNING_QUEUE)}：第一轮学习队列不存在")
+    else:
+        for raw_link in WIKILINK_RE.findall(remove_code_examples(texts[queue_path])):
+            link = raw_link.split("|", 1)[0].strip()
+            target_text = link.partition("#")[0]
+            target_path, error = resolve_note(
+                LEARNING_QUEUE, target_text, notes_by_stem
+            )
+            if error is None and target_path is not None and is_knowledge_note(target_path):
+                queue_notes.append(target_path.resolve())
+
+        knowledge_notes = {path for path in texts if is_knowledge_note(path)}
+        queued_note_set = set(queue_notes)
+        for path in sorted(knowledge_notes - queued_note_set):
+            errors.append(f"{relative(path)}：未加入第一轮学习队列")
+        for path in sorted(queued_note_set - knowledge_notes):
+            errors.append(f"{relative(path)}：不是有效的知识笔记")
+
+        queue_counts: dict[Path, int] = defaultdict(int)
+        for path in queue_notes:
+            queue_counts[path] += 1
+        for path, count in sorted(queue_counts.items()):
+            if count > 1:
+                errors.append(
+                    f"{relative(path)}：在第一轮学习队列中重复 {count} 次"
+                )
+
     if errors:
         print(f"Obsidian Vault 检查失败：{len(errors)} 个问题", file=sys.stderr)
         for error in errors:
@@ -156,7 +187,8 @@ def main() -> int:
     print(
         "Obsidian Vault 检查通过："
         f"{len(files)} 个 Markdown 文件，{question_count} 道编号题，"
-        f"{sum(len(WIKILINK_RE.findall(remove_code_examples(text))) for text in texts.values())} 个 Wikilink。"
+        f"{sum(len(WIKILINK_RE.findall(remove_code_examples(text))) for text in texts.values())} 个 Wikilink，"
+        f"学习队列覆盖 {len(queue_notes)} 个知识节点。"
     )
     return 0
 
