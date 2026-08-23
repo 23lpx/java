@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成 Java 集合与 HashMap 题目 42～78 共 37 题的第一轮准确性校验。
+- 校准集合顺序语义、ArrayList 增长策略、Iterator 可选操作、fail-fast、HashMap 冲突/扩容/树化及 ConcurrentHashMap 并发契约。
+- 修正“Set 一定无序”“ArrayList 固定按 1.5 倍扩容”“fail-fast 必然检测修改”“JDK 8 HashMap 并发只会丢数据”和“ConcurrentHashMap 等于 CAS + 锁桶头”等绝对化表述。
 - 完成 Java 基础题目 1～41（面向对象、Object 与 String、泛型）的第一轮准确性校验。
 - 校准重载/重写、接口版本、构造器前置语句、值传递、装箱缓存、equals/hashCode、字符串驻留与泛型擦除边界。
 - 修正“Java 对象按引用传递”“new String 固定创建两个对象”“字符串池位置由语言规定”和“运行时完全没有泛型信息”等绝对化表述。
