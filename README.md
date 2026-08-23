@@ -13,11 +13,14 @@
 1. 克隆或下载本仓库。
 2. 在 Obsidian 中选择“打开本地仓库”。
 3. 从 [00-总目录.md](00-总目录.md) 进入知识地图。
-4. 使用每篇笔记 Frontmatter 中的 `status` 维护个人学习状态。
+4. 按 [00-第一轮学习队列.md](00-第一轮学习队列.md) 同时推进六条学习线。
+5. 使用每篇笔记 Frontmatter 中的 `status` 维护个人学习状态。
 
 建议使用 Obsidian 阅读。仓库内部大量使用 `\[\[Wikilink\]\]`、标题锚点和 YAML Frontmatter，其他 Markdown 阅读器可能无法完整呈现双向链接。
 
 ## 当前内容
+
+V1.1 已完成全部 649 道题的第一轮准确性校准。V1.2 开始把准确内容转化为求职知识地图、学习队列和可考核的回答能力。
 
 - Java 基础、集合与 HashMap
 - Spring、Spring Boot、Spring MVC、AOP 与事务
