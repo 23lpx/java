@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成 MySQL 进阶、中间件与分布式、部署基础及算法题目 600～649 共 50 题的第一轮准确性校验，至此 649 题全部完成首轮校准。
+- 校准 InnoDB 范围锁与内部两阶段提交、消息投递可靠性、RPC 网络边界、微服务与 CAP、Docker/Nginx 运行模型、Java 算法 API 契约及常用算法模板。
+- 修正“MQ 自动不丢不重”“Kafka Topic 全局有序”“RPC 等同本地调用”“CAP 固定三选二”“Docker 到处绝对一致”“双指针必将 O(n²) 降为 O(n)”等绝对化表述。
 - 完成日志、Git、Maven 与 Linux 题目 542～582 共 41 题的第一轮准确性校验。
 - 校准 SLF4J/Logback 分层、日志诊断链路、Git 快照与引用、fetch/pull/merge/reset、Maven 生命周期与依赖调解、Linux 文件/进程/端口/权限语义。
 - 修正“FATAL 是 SLF4J 标准级别”“pull 固定等于 fetch + merge”“commit 记录文件差异”“Maven 自动选择最高依赖版本”“kill 等于立即杀进程”和“目录 rwx 与文件含义相同”等绝对化表述。
