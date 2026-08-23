@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成 Java 线程基础、锁与线程池、并发进阶题目 494～522、591～599 共 38 题的第一轮准确性校验。
+- 校准平台/虚拟线程、Thread.State、wait/notify、happens-before、volatile、线程池扩容与拒绝、Tomcat Executor、ConcurrentHashMap、CAS、AQS 和 ReentrantLock 契约。
+- 修正“线程始终是 CPU 最小调度单位”“volatile 直接读写主内存”“wait 释放全部锁”“线程池预建全部核心线程”“AQS 严格 FIFO”和“ConcurrentHashMap 复合操作天然原子”等绝对化表述。
 - 完成 MySQL SQL 基础、表设计与 JVM 题目 225～248、472～493 共 46 题的第一轮准确性校验。
 - 校准 SELECT 逻辑顺序、分组函数依赖、连接基数、深分页、DDL 隐式提交、InnoDB 聚簇键、NULL/字符类型、JVM 规范内存区、引用语义、元空间与类加载委派边界。
 - 修正“SQL 按口诀物理执行”“INNER JOIN 行数不超过原表”“TRUNCATE 不写日志”“JDK 8 后方法区等于元空间”“弱引用下次 GC 必回收”和“双亲委派保证全局类唯一”等绝对化表述。
