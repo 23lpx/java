@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成 Spring AOP、Java 反射与 MyBatis 题目 158～181、201～224 共 48 题的第一轮准确性校验。
+- 校准 Spring 代理边界、通知与切点语义、Java 模块化反射限制、Mapper 代理、参数绑定、动态 SQL、主键回填、两级缓存与 PageHelper 线程/方言边界。
+- 修正“有接口必然使用 JDK 代理”“setAccessible 可访问所有 private”“#{} 绝对防注入”“二级缓存必须序列化”和“PageHelper 固定执行 count + LIMIT”等绝对化表述。
 - 完成 Spring Boot、Spring MVC、参数校验与 Filter/Interceptor 题目 116～157 共 42 题的第一轮准确性校验。
 - 校准自动配置与 Starter 分工、外部化配置、MVC 请求处理与消息转换、Jakarta Validation 异常分支、Servlet Filter 和 HandlerInterceptor 生命周期。
 - 修正“Starter 负责版本管理”“GET/POST 决定参数位置”“Jackson 必须无参构造 + setter”“校验失败只有一种异常”和“Interceptor 是理想安全边界”等绝对化表述。
