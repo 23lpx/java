@@ -14,435 +14,511 @@ tags:
 
 **面试回答**
 
-Spring 是一个开源的 Java 应用开发框架，核心是 IoC（控制反转）和 AOP（面向切面编程），用来简化企业级应用开发。它还提供了一整套生态，比如 Spring MVC 做 Web、Spring Boot 快速启动、Spring Cloud 做微服务。
+Spring 通常指以 Spring Framework 为核心的 Java 应用开发生态。Spring Framework 提供 IoC 容器、AOP、事务、数据访问和 Web 等基础能力；Spring Boot 在其上通过自动配置、起步依赖和运维支持简化应用搭建。
 
-**理解**
+**原理与理解**
 
-Spring 本质是一个「对象容器」，帮你管理对象的创建、依赖注入和生命周期，让你不用自己 new 对象、手动维护对象之间的关系。它的核心思想是解耦——把对象之间的依赖关系从硬编码里抽出来，交给框架管理。
+核心容器根据配置元数据实例化、配置和装配对象，使业务类主要关注自身职责。AOP、事务和 Web MVC 等模块围绕容器提供通用基础设施，减少业务代码与框架细节的重复耦合。
 
-**场景**
+**成立条件与边界**
 
-项目里几乎所有组件（Controller、Service、Mapper）都由 Spring 管理，通过注解声明依赖，Spring 自动注入，不用我们手动装配。
+Spring Framework、Spring Boot、Spring Data、Spring Cloud 是不同项目，不能把 Boot 或 Cloud 的能力直接说成 Framework 本身。Spring 也不会管理程序中的所有对象，值对象和临时对象仍可正常 `new`。
+
+**实际场景（通用工程）**
+
+Web 应用可由容器管理 Controller、Service、Repository 及其依赖，再由 Boot 负责常用组件的条件化自动配置。
 
 **常见追问**
 
-- Spring 和 Spring Boot 什么关系？（Spring Boot 是 Spring 的脚手架，用自动配置和起步依赖简化 Spring 项目搭建）
-- Spring 全家桶有哪些？（Spring MVC、Spring Boot、Spring Cloud、Spring Data 等）
+- Spring 与 Spring Boot 的关系？——Boot 基于 Spring 生态，降低配置和启动成本，不替代 Framework。
+- Spring 只能开发 Web 吗？——不能；核心容器、批处理、消息等场景也可使用。
 
 **易错点**
 
-Spring 不是「只能做 Web」，它是一个通用框架；别把 Spring 和 Spring Boot 混为一谈。
+不要把“Spring 是对象容器”当作完整定义，也不要把整个 Spring 生态混成一个模块。
 
 ## 98. Spring 最核心的两个特性是什么？
 
 **面试回答**
 
-IoC（控制反转）和 AOP（面向切面编程）。IoC 负责对象的创建和依赖管理，AOP 负责把横切逻辑（如事务、日志）从业务代码中抽离。
+面试通常回答 IoC/DI 与 AOP。IoC/DI 管理对象及其依赖，AOP 把事务、鉴权、观测等横切关注点模块化，并在合适的连接点织入。
 
-**理解**
+**原理与理解**
 
-IoC 解决「对象怎么创建、依赖怎么注入」的问题，AOP 解决「公共逻辑怎么不侵入业务」的问题。两者都服务于同一个目标：解耦，让代码更清晰、易维护、易测试。
+IoC 容器建立对象图；Spring AOP 通常通过 JDK 动态代理或基于类的代理拦截方法调用。声明式事务等能力正是把元数据、代理与基础设施组合起来。
 
-**场景**
+**成立条件与边界**
 
-项目里 @Autowired 注入依赖体现 IoC；@Transactional 事务、@AutoFill 公共字段填充体现 AOP。
+Spring AOP 是基于代理的运行时 AOP，主要连接点是方法执行；它不是完整 AspectJ 的所有织入能力。内部自调用、不可代理的方法或绕过代理的对象调用可能不会触发增强。
+
+**实际场景（通用工程）**
+
+用构造器注入装配 Service，用 `@Transactional` 在服务边界声明事务；审计、耗时统计也可作为切面，但要控制切点范围。
 
 **常见追问**
 
-- AOP 底层是什么？（动态代理）
-- 两者分别解决什么问题？（对象管理、横切关注点）
+- AOP 底层一定是 JDK 动态代理吗？——不一定，也可能使用基于类的代理。
+- IoC 和 AOP 的共同价值？——降低对象装配与横切逻辑对业务代码的侵入。
 
 **易错点**
 
-别把 IoC 和 AOP 说成两个互不相关的东西，它们都是「解耦」的手段。
+“加了注解就一定生效”不成立，代理边界与调用路径必须满足框架契约。
 
 ## 99. 什么是 IoC？
 
 **面试回答**
 
-IoC 是控制反转，把「对象的创建和依赖管理」的控制权从程序员手里交给 Spring 容器，程序员不再手动 new 对象，而是由容器负责创建并注入依赖。
+IoC 是控制反转：对象不再自行决定依赖的创建和获取，而由容器根据配置负责实例化、装配和生命周期管理，对象只声明自己需要什么。
 
-**理解**
+**原理与理解**
 
-传统方式是你自己 new 对象、手动 set 依赖；IoC 后，你只需声明需要什么，容器负责装配。控制权「反转」了——从「你主动创建」变成「容器主动给你」。这样对象之间的耦合降低，替换实现更容易。
+传统代码由业务对象主动构造或定位依赖；IoC 把这部分控制交给 `BeanFactory`/`ApplicationContext`。容器读取 Bean 定义，构建对象图并在合适时机提供实例。
 
-**场景**
+**成立条件与边界**
 
-Service 里需要 Mapper，不用 new，只需 @Autowired 声明，Spring 就注入。
+IoC 不等于项目中禁止 `new`。由容器提供生命周期、代理、配置等能力的组件适合成为 Bean；短生命周期值对象、命令对象和普通领域对象可以直接创建。
+
+**实际场景（通用工程）**
+
+订单服务依赖支付策略接口，具体实现由容器注入；测试时可传入替身实现，而无需修改服务内部构造逻辑。
 
 **常见追问**
 
-- 「控制反转」反转的是什么？（对象创建和依赖获取的控制权）
-- IoC 容器是什么？（Spring 里就是 ApplicationContext / BeanFactory）
+- Spring IoC 容器接口有哪些？——基础是 `BeanFactory`，`ApplicationContext` 在其上增加事件、资源、国际化等能力。
+- 反转了什么？——组件创建、装配和依赖获取的控制权。
 
 **易错点**
 
-IoC 不是「不用 new 了」这么简单，核心是「控制权转移 + 依赖解耦」。
+IoC 的重点是依赖控制权和对象协作方式，不只是“少写 new”。
 
 ## 100. IoC 解决了什么问题？
 
 **面试回答**
 
-解决对象之间的耦合问题。以前对象自己创建依赖，导致类之间强耦合、难替换、难测试；IoC 把依赖交给容器管理，类之间松耦合，便于扩展和单元测试。
+IoC 主要降低组件对具体实现和装配过程的耦合，并集中管理配置、生命周期和基础设施增强，从而提升替换、测试和演进能力。
 
-**理解**
+**原理与理解**
 
-比如 Service 直接 new 一个具体的 Dao 实现，想换实现就得改代码。IoC 让 Service 只依赖接口，具体实现由容器注入，换实现只改配置或注解。这就是「面向接口编程」落地的基础。
+类依赖接口并通过构造器声明所需协作者，容器在组合根选择实现。业务对象不需要知道依赖来自组件扫描、`@Bean`、XML 还是程序化注册。
 
-**场景**
+**成立条件与边界**
 
-项目里 Service 依赖 Mapper 接口，不关心具体是 MyBatis 还是别的实现，测试时还能注入 mock 对象。
+IoC 不能自动消除错误的模块边界；如果类仍依赖巨型接口、共享可变状态或全局服务定位器，放进容器也不会自然变得低耦合。过度拆分 Bean 还会增加理解成本。
+
+**实际场景（通用工程）**
+
+生产环境注入真实网关，单元测试注入内存实现；配置差异集中在装配层，核心业务逻辑保持一致。
 
 **常见追问**
 
-- 解耦具体体现在哪？（依赖接口而非实现，容器统一装配）
-- 对测试有什么好处？（容易替换成 mock 对象）
+- 为什么有利于测试？——依赖可显式传入替身，而不是在方法内部硬编码创建。
+- IoC 是否等于面向接口编程？——不是，但两者常配合。
 
 **易错点**
 
-IoC 的主要价值是「解耦」，不是为了少写几行 new。
+不要把“容器能替换实现”夸大成“不改任何配置和代码就能任意换技术”。
 
 ## 101. 什么是 DI？
 
 **面试回答**
 
-DI 是依赖注入，是 IoC 的一种实现方式：容器在创建对象时，把对象依赖的其他对象自动注入进去，而不是对象自己去获取。
+DI 是依赖注入：容器把对象所需的协作者通过构造器、工厂方法、setter、普通配置方法或字段提供给它，是 Spring 实现 IoC 的主要方式。
 
-**理解**
+**原理与理解**
 
-依赖注入有几种方式：构造器注入、字段注入、setter 注入。Spring 通过 @Autowired 等方式完成注入。DI 让「依赖」由外部提供，而不是内部创建。
+构造器注入适合必需依赖，使对象创建后即完整；setter 或配置方法适合可选、可重新配置依赖。字段注入虽然受支持，但依赖不显式且不利于普通单元测试。
 
-**场景**
+**成立条件与边界**
 
-Controller 依赖 Service，通过构造器注入或 @Autowired 字段注入，Spring 自动把 Service 实例传进去。
+注入的是容器能解析的候选对象或可转换的配置值。DI 不意味着只需类型就永远唯一；多候选时还要通过限定符、主候选、优先级或集合注入表达选择。
+
+**实际场景（通用工程）**
+
+`OrderService(PaymentGateway gateway)` 通过构造器声明必需依赖，配置类决定注入真实网关还是测试替身。
 
 **常见追问**
 
-- DI 有哪几种方式？（构造器注入、setter 注入、字段注入）
-- IoC 和 DI 是一个东西吗？（DI 是 IoC 的具体实现）
+- 常见注入方式？——构造器、setter/方法和字段注入。
+- 必需依赖推荐哪一种？——构造器注入。
 
 **易错点**
 
-DI 只是 IoC 的一种实现，别把两者完全等同。
+不要把注入方式限定为 `@Autowired` 字段；Java 配置和构造器解析同样属于 DI。
 
 ## 102. IoC 和 DI 有什么关系？
 
 **面试回答**
 
-IoC 是思想/设计原则，DI 是实现这个思想的具体手段。Spring 通过 DI 来完成 IoC 的「控制反转」。
+IoC 是更宽泛的控制权反转原则，DI 是其中一种实现方式。Spring 主要通过 DI 让对象被动获得依赖，也保留通过容器 API 主动查找 Bean 的能力。
 
-**理解**
+**原理与理解**
 
-IoC 说「控制权要反转」，但怎么反转？DI 就是答案——通过注入依赖，把对象的创建和依赖获取交给容器。所以常说「IoC 是目的，DI 是手段」，它们通常一起出现。
+DI 把对象图装配放在容器和配置层；Dependency Lookup 则由调用方请求容器返回对象。两者都可体现 IoC，但前者让业务类更少依赖容器 API。
 
-**场景**
+**成立条件与边界**
 
-Spring 容器用 DI 帮我们把 Service 注入 Controller，实现了 IoC 的解耦。
+“DI 是手段、IoC 是目的”便于面试记忆，但不是语言规范定义。实际设计还要看生命周期动态性；需要按请求或运行时选择时，可注入 `ObjectProvider`、工厂或策略集合。
+
+**实际场景（通用工程）**
+
+Controller 通过构造器得到 Service 是 DI；业务代码直接调用 `applicationContext.getBean(...)` 属于依赖查找，通常应限制在框架整合边界。
 
 **常见追问**
 
-- 除了 DI，IoC 还有别的实现吗？（依赖查找 Dependency Lookup，如 getBean）
-- 为什么总把 IoC/DI 一起说？（因为 Spring 主要用 DI 实现 IoC）
+- 为什么优先 DI？——依赖显式、易测试，并减少对 Spring API 的耦合。
+- DI 能处理运行时选择吗？——可以注入提供者、工厂或多个候选再选择。
 
 **易错点**
 
-别把两者完全等同，IoC 是思想、DI 是具体实现。
+IoC 与 DI 密切相关但不是完全同义词。
 
 ## 103. 什么是 Spring Bean？
 
 **面试回答**
 
-Spring Bean 就是由 Spring 容器创建并管理的对象。凡是被 Spring 实例化、装配、管理的对象，都叫 Bean。
+Spring Bean 是由 Spring IoC 容器实例化、装配或以其他方式管理的对象，是容器配置和生命周期处理的基本单位。
 
-**理解**
+**原理与理解**
 
-Bean 是 Spring 容器里的基本单元。一个类被 @Component 等注解标记或通过 @Bean 声明后，Spring 会创建它的实例放进容器，之后需要时通过注入获取。Bean 和普通 new 出来的对象的区别在于：Bean 的生命周期由容器管理。
+容器保存 `BeanDefinition` 等配置元数据，描述类型、工厂、依赖、作用域、初始化和销毁回调。对象可以由构造器、静态/实例工厂方法或 `FactoryBean` 等机制产生。
 
-**场景**
+**成立条件与边界**
 
-项目里的 DishController、DishService、DishMapper 都是 Bean，由 Spring 统一管理。
+Spring Bean 不等于 JavaBean，也不要求由 `@Bean` 方法创建。某些外部对象可以注册为单例后由容器管理，但“已注册”不代表它经历了完整的创建前生命周期。
+
+**实际场景（通用工程）**
+
+业务服务可由组件扫描注册，第三方客户端由配置类中的 `@Bean` 构造，两者都可成为容器管理对象。
 
 **常见追问**
 
-- 怎么定义一个 Bean？（@Component 系列注解、@Bean 方法、XML 配置）
-- Bean 和 JavaBean 一样吗？（不一样，JavaBean 是规范，Spring Bean 是容器管理的对象）
+- Bean 和普通对象的关键区别？——容器知道它并可参与装配、作用域和生命周期处理。
+- Bean 一定是单例吗？——不是，singleton 只是默认作用域。
 
 **易错点**
 
-Bean 不一定非要用 @Bean 注解，@Component 等也能让对象成为 Bean。
+不要把“类加了注解”直接等同于“对象已经成为 Bean”，还需要相应的扫描或注册基础设施。
 
 ## 104. Bean 是怎么交给 Spring 管理的？
 
 **面试回答**
 
-通过声明让 Spring 知道要管理它：用 @Component/@Service/@Controller/@Repository 等注解标记类，配合 @ComponentScan 扫描，或者用 @Bean 方法、@Configuration 显式注册。
+先向容器注册 Bean 定义或实例，常见方式包括组件扫描、`@Bean` Java 配置、XML、`ImportSelector`/`BeanDefinitionRegistryPostProcessor` 等程序化扩展；容器再按作用域和生命周期规则创建、装配并处理它。
 
-**理解**
+**原理与理解**
 
-Spring 启动时会扫描指定包下带这些注解的类，为它们创建 Bean 定义，然后实例化放进容器（IoC 容器）。之后通过 @Autowired 等注入。核心三步：声明（注解）→ 扫描（@ComponentScan）→ 注册（容器管理）。
+组件扫描发现符合过滤规则的候选类并注册定义；`@Bean` 方法声明工厂逻辑。注册定义与立即实例化不是一回事，非懒加载单例通常在容器刷新阶段预实例化，懒加载和其他作用域按需创建。
 
-**场景**
+**成立条件与边界**
 
-项目启动类上的 @SpringBootApplication 内部包含 @ComponentScan，默认扫描启动类所在包及子包，自动把 @Service、@Controller 等注册为 Bean。
+`@Service` 只有位于有效扫描范围或被显式导入时才会注册。Spring Boot 的 `@SpringBootApplication` 包含组件扫描是 Boot 约定，不能当成纯 Spring Framework 的默认行为。
+
+**实际场景（通用工程）**
+
+把启动类放在应用根包可覆盖常见子包；跨模块组件可显式 `@Import`、配置扫描包或通过自动配置注册，避免依赖偶然的包结构。
 
 **常见追问**
 
-- @SpringBootApplication 和 @ComponentScan 什么关系？（前者内含 @ComponentScan）
-- 不在扫描范围的包能被管理吗？（不能，得手动配置扫描路径或用 @Bean）
+- 注册后一定立刻创建吗？——不一定，取决于作用域、懒加载和容器阶段。
+- 不在扫描包中怎么办？——显式调整扫描、`@Import` 或 `@Bean` 注册。
 
 **易错点**
 
-光加 @Service 不够，还要保证它在 @ComponentScan 的扫描范围内，否则不会成为 Bean。
+“声明 → 扫描 → 立刻实例化”不是所有 Bean 的固定流程。
 
 ## 105. `@Component`、`@Service`、`@Controller`、`@Repository` 有什么区别？
 
 **面试回答**
 
-它们作用一样，都是把类声明为 Spring Bean；区别只是语义分层，便于阅读和按层处理异常、切面等。
+它们都是组件 stereotype：`@Service`、`@Controller`、`@Repository` 元标注了 `@Component`，可被组件扫描发现；后三者分别表达业务、Web 和持久化层语义，并可能被相关基础设施据此处理。
 
-**理解**
+**原理与理解**
 
-@Component 是通用注解；@Service 表示业务层、@Controller 表示控制层、@Repository 表示数据访问层。这三个本质是 @Component 的「特化」别名。@Repository 还有额外作用：Spring 会把数据访问层的异常翻译成 Spring 的 DataAccessException。
+`@Controller` 会被 Spring MVC 的处理器映射识别；`@Repository` 可作为持久化异常翻译的标记；`@Service` 主要提供业务层语义和切点标识。`@RestController` 则组合了 `@Controller` 与 `@ResponseBody`。
 
-**场景**
+**成立条件与边界**
 
-项目里 Controller 用 @RestController（含 @Controller）、Service 用 @Service、Mapper 用 MyBatis 的 @Mapper，分层清晰。
+`@Repository` 并非单独一贴就保证异常翻译，还需要 `PersistenceExceptionTranslationPostProcessor` 等基础设施及受支持的持久化资源。不同 stereotype 不能只按“注册 Bean 功能一样”就随意互换。
+
+**实际场景（通用工程）**
+
+Controller 负责协议适配、Service 表达用例、Repository 封装持久化访问；清晰分层也便于配置 MVC、事务和观测切点。
 
 **常见追问**
 
-- 它们能互换吗？（功能上基本能，但语义和个别增强不同）
-- @Repository 的特殊之处？（异常翻译）
+- 能否自定义 stereotype？——可以，用 `@Component` 等作元注解组合团队语义。
+- `@Repository` 的额外价值？——可参与持久化异常转换和架构表达，但依赖相应后处理器。
 
 **易错点**
 
-说「功能完全不同」是错的，它们本质都是 @Component；区别主要是语义和个别增强。
+“它们完全一样”与“它们功能完全不同”都过度；要同时回答共同注册能力和语义/基础设施差异。
 
 ## 106. `@Autowired` 有什么作用？
 
 **面试回答**
 
-@Autowired 是 Spring 的依赖注入注解，容器会自动把匹配类型的 Bean 注入到被标注的字段、构造器或方法上。
+`@Autowired` 声明由 Spring 解析依赖，可标在构造器、方法或字段上。容器先按所需类型筛选候选，再结合 `@Qualifier`、`@Primary`、优先级以及候选名称等规则确定结果。
 
-**理解**
+**原理与理解**
 
-默认按类型（byType）注入，如果同类型有多个 Bean，再结合 @Qualifier 或 @Primary 指定。它是 Spring 最常用的注入方式。
+只有一个构造器时通常无需标注 `@Autowired`。多候选可以限定名称或语义，也可以注入数组、集合、`Optional`、`ObjectProvider` 等表达多值或可选依赖。
 
-**场景**
+**成立条件与边界**
 
-Controller 里 @Autowired 注入 Service，Service 里 @Autowired 注入 Mapper。
+默认 required 注入找不到候选会失败；`@Autowired(required=false)`、`Optional<T>` 等具有不同可选语义。`@Resource` 来自 Jakarta 标准，通常以名称语义为主，不能简单概括成与 `@Autowired` 完全相反的单一规则。
+
+**实际场景（通用工程）**
+
+支付网关有多个实现时，在构造器参数上用语义化 `@Qualifier`，或注入 `Map<String, PaymentGateway>` 由策略路由选择。
 
 **常见追问**
 
-- @Autowired 和 @Resource 什么区别？（@Autowired 按类型，Spring 提供；@Resource 默认按名称，JSR-250 提供）
-- 多个同类型 Bean 怎么办？（@Qualifier 或 @Primary）
+- 同类型多个 Bean 怎么办？——限定符、主候选、优先级或集合注入。
+- 单构造器为什么可省略注解？——Spring 会直接使用该构造器进行解析。
 
 **易错点**
 
-@Autowired 默认按类型注入，不是按名称；找不到唯一 Bean 会报错。
+不要只回答“按类型注入”；多候选消歧和可选性也是契约的一部分。
 
 ## 107. 字段注入和构造器注入有什么区别？
 
 **面试回答**
 
-字段注入直接在字段上 @Autowired，写法简洁但依赖不透明、难测试、可能有 NPE 或循环依赖问题；构造器注入通过构造方法传依赖，依赖明确、不可变，官方推荐。
+构造器注入把必需依赖写入类型的创建契约，可配合 `final`，对象构造完成即处于有效状态，也易于不启动 Spring 的单元测试；字段注入简短，但依赖隐藏、不可直接声明 `final`，普通实例化时也容易遗漏注入。
 
-**理解**
+**原理与理解**
 
-构造器注入让依赖在构造时就确定，对象创建后依赖就是完整的，且字段可声明 final，更不可变；字段注入依赖通过反射赋值，对象可以先创建出来（字段可能为空）。构造器注入还能在启动时暴露循环依赖问题。
+Spring 官方建议必需依赖使用构造器，合理的可选依赖使用 setter 或配置方法。字段注入由容器后处理阶段设置字段，不是构造器参数的一部分。
 
-**场景**
+**成立条件与边界**
 
-项目里推荐用构造器注入（或 Lombok 的 @RequiredArgsConstructor），依赖明确；字段注入常见于简单 Controller 场景。
+字段注入不必然导致 NPE，也不能简单归因于“用了反射”；真正问题是对象契约、可测试性和可变性。构造器循环依赖无法解析，setter/字段形式的单例循环有时可被容器处理，但设计仍应拆解。
+
+**实际场景（通用工程）**
+
+Service 用显式构造器或 Lombok 生成必需依赖构造器；可选的观测回调使用 setter，并为缺省行为给出清晰定义。
 
 **常见追问**
 
-- 为什么推荐构造器注入？（依赖明确、可 final、易测试）
-- 字段注入有什么问题？（依赖不透明，不利于单元测试，NPE 风险）
+- 为什么构造器有利于测试？——直接传入替身即可构造，无需容器或反射。
+- 构造器参数太多说明什么？——类可能承担过多职责，应评估拆分。
 
 **易错点**
 
-别以为字段注入和构造器注入完全没差别，构造器注入在可测试性和不可变性上更好。
+不要把“构造器注入能暴露循环依赖”说成“它解决了循环依赖”。
 
 ## 108. `@Configuration` 有什么作用？
 
 **面试回答**
 
-@Configuration 标记一个类为配置类，表示这个类里会定义 Bean，通常配合 @Bean 使用，等价于早期的 XML 配置文件。
+`@Configuration` 声明一个类是 Bean 定义来源，常与 `@Bean` 配合。默认 `proxyBeanMethods=true` 的 full 模式会创建基于类的代理，使配置类内部的 `@Bean` 方法调用遵循容器中的作用域语义。
 
-**理解**
+**原理与理解**
 
-@Configuration 类本身也是一个 @Component（会被注册为 Bean），Spring 会处理类里 @Bean 方法，把返回的对象注册到容器。它通过 CGLIB 代理保证 @Bean 方法调用返回的是容器里的单例（而不是每次 new）。
+full 模式拦截 inter-bean method call，并从容器取得目标 Bean；设置 `proxyBeanMethods=false` 或在普通组件上使用 `@Bean` 属于 lite 模式，方法调用就是普通 Java 调用，不会被拦截。
 
-**场景**
+**成立条件与边界**
 
-项目里用配置类声明一些第三方 Bean（如 RestTemplate、自定义拦截器、RedisTemplate 配置）。
+代理保证的是容器作用域语义，不是“所有调用永远返回单例”：prototype Bean 仍按其作用域创建。full 模式对可代理的类和方法有约束；无 inter-bean 直接调用时可考虑 lite 模式减少限制。
+
+**实际场景（通用工程）**
+
+配置第三方客户端时，优先让 `@Bean` 方法通过参数注入依赖，减少配置方法互调并让依赖图更显式。
 
 **常见追问**
 
-- @Configuration 和 @Component 什么关系？（@Configuration 是 @Component 的特化）
-- @Configuration 里的 @Bean 方法直接调用会怎样？（返回容器里的单例，因为有 CGLIB 代理）
+- `@Configuration` 本身是 Bean 吗？——它元标注 `@Component`，被注册后也是容器组件。
+- `proxyBeanMethods=false` 有何影响？——内部直接调用 `@Bean` 方法不再走容器拦截。
 
 **易错点**
 
-@Configuration 里 @Bean 方法互相调用能保证单例，靠的是 CGLIB 代理；普通 @Component 类里的 @Bean 没有这个保证。
+“CGLIB 保证 @Bean 永远单例”忽略了配置模式和 Bean 作用域。
 
 ## 109. `@Bean` 有什么作用？
 
 **面试回答**
 
-@Bean 用在方法上，把这个方法的返回值注册成一个 Spring Bean，方法名默认就是 Bean 的名字，常用于注册第三方类或需要自定义初始化逻辑的对象。
+`@Bean` 标注工厂方法，将其返回对象作为 Bean 交给容器管理；默认 Bean 名是方法名，也可显式配置名称或别名。
 
-**理解**
+**原理与理解**
 
-有些类不是你自己写的（如 RestTemplate、连接池、Jackson 的 ObjectMapper），没法直接加 @Component，就用 @Bean 方法在配置类里返回一个实例交给 Spring 管理。它更灵活，能自定义构造过程。
+容器解析方法的参数依赖，并按配置调用方法创建对象。它适合第三方类型、需要自定义构造过程或集中装配的组件，也可声明作用域、初始化和销毁方法。
 
-**场景**
+**成立条件与边界**
 
-项目里配置 RestTemplate、RedisTemplate、对象映射器时用 @Bean。
+`@Bean` 常用于 `@Configuration`，也能出现在普通 `@Component` 中；后者是 lite 模式。Bean 可能为 prototype 或其他作用域，方法也可能通过 `FactoryBean` 等返回更复杂的产品对象。
+
+**实际场景（通用工程）**
+
+为 HTTP 客户端配置超时、连接池和拦截器后通过 `@Bean` 注册；业务组件优先用清晰的组件扫描或显式配置，避免重复定义。
 
 **常见追问**
 
-- @Bean 和 @Component 区别？（@Bean 作用于方法、注册第三方类；@Component 作用于类）
-- @Bean 的 Bean 名字默认是什么？（方法名）
+- `@Bean` 与 `@Component` 的主要差异？——前者声明工厂方法，后者标记候选组件类。
+- 能否自定义 Bean 名？——可以使用 `name`/`value`。
 
 **易错点**
 
-@Bean 用在「方法」上，@Component 用在「类」上，别搞混。
+`@Bean` 不只是“把第三方类放进容器”，自有类型也可使用；关键是注册方式和装配控制。
 
 ## 110. `@ComponentScan` 有什么作用？
 
 **面试回答**
 
-@ComponentScan 指定 Spring 扫描哪些包，把包下带 @Component 等注解的类注册为 Bean。
+`@ComponentScan` 配置类路径扫描范围和过滤规则，将符合条件的组件类注册为 Bean 定义。未显式给出包时，通常从声明该注解的配置类所在包扫描。
 
-**理解**
+**原理与理解**
 
-Spring 不会自动扫描所有包，需要 @ComponentScan 告诉它扫描范围。@SpringBootApplication 内部包含了 @ComponentScan，默认扫描启动类所在包及其子包，所以项目里组件放在启动类同包或子包下才能被扫到。
+扫描器识别 `@Component` 及其组合注解，并支持 include/exclude filter、名称生成器和作用域解析。它负责发现和注册，不等于所有 Bean 都必须通过扫描产生。
 
-**场景**
+**成立条件与边界**
 
-项目里所有 @Service、@Controller 都放在启动类所在包的子包里，自动被扫描注册。
+Spring Boot 启动类的默认扫描根包来自 `@SpringBootApplication` 所在包，这是 Boot 组合注解的行为。跨模块扫描过宽可能意外注册组件或造成 Bean 冲突。
+
+**实际场景（通用工程）**
+
+把启动配置放在稳定的根包，并对基础设施模块显式导入；不要为“扫不到”直接扫描整个公司根包。
 
 **常见追问**
 
-- 默认扫描范围？（启动类所在包及其子包）
-- 想扫描别的包怎么办？（@ComponentScan(basePackages = "...") 或 @SpringBootApplication(scanBasePackages=...)）
+- 如何扫描其他包？——设置 `basePackages`/`basePackageClasses`，或使用 `@Import` 等显式注册。
+- 能排除组件吗？——可以配置 exclude filter。
 
 **易错点**
 
-组件放错包（不在扫描范围内）不会被注册，这是常见 bug。
+“默认扫描启动类包”只在 Boot 启动类语境中成立，不能泛化为所有 Spring 配置。
 
 ## 111. `@Value` 有什么作用？
 
 **面试回答**
 
-@Value 用于给 Bean 字段注入配置值，支持从配置文件（application.yml/properties）读取，或直接写字面量、表达式。
+`@Value` 可把字面量、属性占位符或 SpEL 表达式解析后的值注入字段、方法参数或构造器参数，并借助类型转换绑定到目标类型。
 
-**理解**
+**原理与理解**
 
-`@Value("${server.port}")` 从配置读值，`@Value("${key:默认值}")` 可给默认值。它简化了从配置文件取值的操作，但适合简单值（字符串、数字等），复杂配置对象更适合用 @ConfigurationProperties。
+`${app.timeout:3s}` 表示属性占位符及默认值，`#{...}` 表示 SpEL。占位符是否可解析、属性源优先级和转换能力取决于容器与环境配置；Spring Boot 会补充自己的外部化配置体系。
 
-**场景**
+**成立条件与边界**
 
-项目里用 @Value 读一些单值配置，比如支付宝回调地址、JWT 过期时间等。
+多个有层次、需要校验或复用的配置更适合 `@ConfigurationProperties`；`@Value` 分散在代码中会降低可发现性和重构安全。密钥也不应写成源码字面量。
+
+**实际场景（通用工程）**
+
+单个功能开关可用 `@Value`；支付客户端的地址、超时、重试和凭据应绑定为经校验的配置对象，并由密钥管理设施提供敏感值。
 
 **常见追问**
 
-- @Value 和 @ConfigurationProperties 区别？（@Value 单值，@ConfigurationProperties 批量绑定复杂对象）
-- @Value 能读对象吗？（不适合，复杂结构用 @ConfigurationProperties）
+- `@Value` 与 `@ConfigurationProperties` 如何选？——零散简单值可前者，结构化配置优先后者。
+- 默认值语法是什么？——属性占位符常用 `${key:default}`。
 
 **易错点**
 
-@Value 适合简单值；读复杂配置（多字段、层级）用 @ConfigurationProperties 更合适。
+不要把 `@Value` 说成只能注入 application.yml；它解析的是配置环境、表达式和字面量。
 
 ## 112. Spring Bean 默认是单例吗？
 
 **面试回答**
 
-是，Spring 容器里的 Bean 默认是单例（singleton），同一个 Bean 名字在整个容器里只有一个实例，每次注入拿到的都是同一个对象。
+是。默认 `singleton` 表示每个 Spring IoC 容器中，每个 Bean 定义共享一个实例；它不是 JVM 全局唯一，也不是按 Java 类全局唯一。
 
-**理解**
+**原理与理解**
 
-单例是 Spring 默认作用域。容器启动时创建实例，之后复用，节省内存、提高性能。这跟 GoF 单例模式不完全一样——Spring 的「单例」是「每个容器每个 Bean 一个实例」，不是 JVM 全局唯一。
+同一类型注册两个不同 Bean 定义，会各有自己的 singleton 实例；别名通常指向同一定义。容器缓存已创建的 singleton，并在后续依赖解析或获取时返回它。
 
-**场景**
+**成立条件与边界**
 
-项目里的 Service、Controller 都是单例，多个请求共享同一个实例。
+默认单例不等于一定在启动时创建：懒加载 Bean 可按需实例化，某些基础设施和依赖关系也会改变创建时机。作用域还可改为 prototype、request 等。
+
+**实际场景（通用工程）**
+
+无状态 Service 适合默认单例；若某对象包含每次任务独立的可变状态，更应把状态放进方法局部对象，或明确选择合适作用域。
 
 **常见追问**
 
-- 为什么默认单例？（性能、复用，大多数 Bean 无状态）
-- 单例是 JVM 全局唯一吗？（不是，是「每容器每 Bean 名一个实例」）
+- 与 GoF 单例的区别？——Spring singleton 的边界是容器和 Bean 定义。
+- 同一类能有两个单例 Bean 吗？——可以，只要是两个定义。
 
 **易错点**
 
-Spring 单例 ≠ 设计模式单例（JVM 唯一），是「每容器每 Bean 名一个实例」。
+不要用“Spring 启动时创建一个类的唯一对象”概括默认单例。
 
 ## 113. 单例 Bean 一定线程安全吗？
 
 **面试回答**
 
-不一定。Spring 只保证 Bean 是单例（共享同一实例），不保证线程安全；单例 Bean 如果有可变状态且被多线程修改，就会有线程安全问题。
+不一定。Spring 只管理实例数量和生命周期，不为 Bean 的字段或其依赖自动提供并发安全。是否安全取决于整个调用链是否共享可变状态以及访问方式。
 
-**理解**
+**原理与理解**
 
-单例只是「共享实例」，线程安全要看 Bean 有没有共享的可变状态。无状态 Bean（如 Service 方法内只用局部变量）天然线程安全；如果 Bean 里有可变成员变量（如一个计数器字段）被多线程读写，就会出问题。所以要让单例 Bean 线程安全，通常是保持无状态设计，或对共享状态加锁/用 ThreadLocal。
+只使用方法局部变量的无状态 Service 通常容易并发使用；共享计数器、可变集合或非线程安全客户端则需要不可变设计、并发容器、锁、原子类或状态外置。
 
-**场景**
+**成立条件与边界**
 
-项目里的 Service 大多是无状态的（依赖的 Mapper 也是无状态），所以单例没线程安全问题；但如果有成员变量存请求数据就危险，这也是为什么用 ThreadLocal 存用户信息而不是存成员变量。
+“无状态 Bean”也可能调用线程不安全的依赖；`ThreadLocal` 只是线程关联存储，不会自动修复对象设计，在线程池中还必须清理，异步切换线程时也不会天然传播。
+
+**实际场景（通用工程）**
+
+不要把当前用户、订单临时数据放在 singleton 字段中；请求上下文应由明确的上下文机制传递，并在入口和退出边界正确设置、清除。
 
 **常见追问**
 
-- 怎么让单例 Bean 线程安全？（无状态设计、ThreadLocal、锁、换作用域）
-- 无状态是什么意思？（Bean 不持有可变实例字段）
+- 改成 prototype 就一定安全吗？——不一定，实例仍可能被共享，依赖也可能不安全。
+- 如何判断？——检查共享可变状态、逃逸、依赖契约和并发访问路径。
 
 **易错点**
 
-别把「单例」等同于「线程安全」；核心看有没有共享可变状态。
+单例与线程安全是两个维度；“Service 没字段所以全链路安全”也过于绝对。
 
 ## 114. Spring Bean 有哪些常见作用域？
 
 **面试回答**
 
-常见的有 singleton（单例，默认）、prototype（原型，每次获取新建实例）；Web 环境下还有 request（每个请求一个）、session（每个会话一个）、application（每个 Web 应用一个）等。
+基础作用域有 `singleton` 和 `prototype`；Web-aware ApplicationContext 还支持 request、session、application、websocket 等作用域，也可以注册自定义 Scope。
 
-**理解**
+**原理与理解**
 
-singleton 容器里只有一个实例；prototype 每次注入/获取都 new 一个；request/session/application 是 Web 应用中的作用域，生命周期跟随请求/会话/应用。多数业务 Bean 用默认 singleton，需要每次新建的用 prototype。
+singleton 每个容器每个定义一个共享实例；prototype 在每次向容器请求时创建新实例。request/session 等把实例绑定到相应 Web 生命周期，常通过 scoped proxy 或提供者注入到更长生命周期 Bean。
 
-**场景**
+**成立条件与边界**
 
-项目里绝大多数 Bean 是默认 singleton；个别需要每次新建（比如有状态对象、每次独立的临时对象）才用 prototype。
+prototype 注入 singleton 时，依赖通常只在 singleton 创建时解析一次；若每次调用都需要新实例，应使用 `ObjectProvider`、方法查找或 scoped proxy。容器创建 prototype 后通常不负责其完整销毁回调。
+
+**实际场景（通用工程）**
+
+绝大多数无状态服务使用 singleton；请求相关状态优先显式作为参数传递，确需作用域 Bean 时再使用 request scope，并处理离开请求上下文的访问。
 
 **常见追问**
 
-- singleton 和 prototype 区别？（一个实例 vs 每次新建）
-- prototype 的 Bean 谁负责销毁？（容器不负责完整生命周期，需自己处理）
+- prototype 是否每次方法调用都新建？——不是，是每次向容器请求时创建。
+- 短作用域如何注入长作用域？——使用 scoped proxy 或 provider。
 
 **易错点**
 
-prototype Bean 的销毁回调 Spring 不完全管理，别以为所有作用域都有完整生命周期回调。
+“每次注入 prototype 都会动态新建”不准确，注入发生的时点决定了实例获取次数。
 
 ## 115. Spring Bean 生命周期大致是什么？
 
 **面试回答**
 
-大致是：实例化 → 属性填充（依赖注入）→ 各种 Aware 接口回调 → 初始化前（BeanPostProcessor）→ 初始化（InitializingBean / @PostConstruct）→ 初始化后（AOP 代理）→ 使用 → 销毁（DisposableBean / @PreDestroy）。
+典型流程是：解析定义并实例化 → 填充依赖 → Aware 回调 → `BeanPostProcessor` 初始化前处理 → 初始化回调 → 初始化后处理并可能形成代理 → 对外使用 → 容器关闭时执行销毁回调。
 
-**理解**
+**原理与理解**
 
-简化记忆：创建对象 → 注入依赖 → 初始化 → 使用 → 销毁。Spring 提供很多扩展点，常见的是 @PostConstruct（初始化时执行）和 @PreDestroy（销毁前执行）。AOP 代理也在这个流程里（初始化后生成代理对象）。
+常见初始化回调顺序是 `@PostConstruct`、`InitializingBean.afterPropertiesSet()`、自定义 init 方法；销毁阶段对应 `@PreDestroy`、`DisposableBean.destroy()`、自定义 destroy 方法。现代 Spring 使用 `jakarta.annotation` 下的生命周期注解。
 
-**场景**
+**成立条件与边界**
 
-项目里可以用 @PostConstruct 做初始化逻辑（如加载缓存），@PreDestroy 做清理；AOP（事务、@AutoFill）也是在 Bean 初始化后通过代理实现的。
+这是常规简化模型，具体后处理器、工厂 Bean、提前引用和循环依赖会增加分支；AOP 代理通常由后处理器产生，不能绝对说“所有代理只在初始化完成后创建”。prototype 的销毁阶段也不由容器完整负责。
+
+**实际场景（通用工程）**
+
+初始化回调可校验配置或建立轻量资源；耗时远程预热要考虑启动超时和失败策略。销毁回调用于关闭客户端和线程池，但进程强杀时不能保证执行。
 
 **常见追问**
 
-- @PostConstruct 和构造方法哪个先？（构造方法先，@PostConstruct 在依赖注入完成后）
-- BeanPostProcessor 是什么？（Bean 初始化前后的扩展点，AOP 就是靠它）
+- 构造器和 `@PostConstruct` 谁先？——先实例化并注入依赖，再执行 `@PostConstruct`。
+- `BeanPostProcessor` 的作用？——在初始化前后加工 Bean，代理创建是常见用途之一。
 
 **易错点**
 
-记住顺序——先实例化、再注入、再初始化；@PostConstruct 在依赖注入之后才执行。
+不要把生命周期背成所有 Bean 都严格一致的一条直线；作用域和扩展点会改变时机与责任边界。
