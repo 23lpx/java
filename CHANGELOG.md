@@ -4,6 +4,9 @@
 
 ## 未发布
 
+- 完成 Java 异常、Java 8 与 Spring 基础题目 79～115 共 37 题的第一轮准确性校验。
+- 校准 Throwable 分类、finally 控制流、Lambda/函数式接口、Stream 副作用、IoC/DI、依赖注入、配置模式、Bean 作用域与生命周期边界。
+- 修正“Error 不能捕获”“finally 一定执行”“Lambda 等于匿名内部类”“Stream 不会修改对象”“@Configuration 永远保证单例”和“单例 Bean 天然线程安全”等绝对化表述。
 - 完成 Java 集合与 HashMap 题目 42～78 共 37 题的第一轮准确性校验。
 - 校准集合顺序语义、ArrayList 增长策略、Iterator 可选操作、fail-fast、HashMap 冲突/扩容/树化及 ConcurrentHashMap 并发契约。
 - 修正“Set 一定无序”“ArrayList 固定按 1.5 倍扩容”“fail-fast 必然检测修改”“JDK 8 HashMap 并发只会丢数据”和“ConcurrentHashMap 等于 CAS + 锁桶头”等绝对化表述。
