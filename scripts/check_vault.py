@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LEARNING_QUEUE = ROOT / "00-第一轮学习队列.md"
+DAILY_REVIEW_TEMPLATE = ROOT / "00-每日学习与闭卷考核模板.md"
 EXCLUDED_PARTS = {".git", ".github", ".obsidian", ".idea", ".claude"}
 REQUIRED_FIELDS = {"category", "priority", "status", "tags"}
 VALID_PRIORITIES = {"P0", "P1", "P2"}
@@ -20,6 +21,15 @@ QUESTION_RE = re.compile(r"^##\s+(\d+)\.\s+(.+?)\s*$", re.MULTILINE)
 HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*$", re.MULTILINE)
 WIKILINK_RE = re.compile(r"!?\[\[([^\]]+)\]\]")
 FIELD_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
+DAILY_REVIEW_HEADINGS = {
+    "今日计划",
+    "白天学习记录",
+    "晚间闭卷考核",
+    "错题复盘",
+    "学习状态变更",
+    "当日结果",
+    "明日行动",
+}
 
 
 def relative(path: Path) -> str:
@@ -177,6 +187,19 @@ def main() -> int:
                 errors.append(
                     f"{relative(path)}：在第一轮学习队列中重复 {count} 次"
                 )
+
+    review_template_path = DAILY_REVIEW_TEMPLATE.resolve()
+    if review_template_path not in texts:
+        errors.append(f"{relative(DAILY_REVIEW_TEMPLATE)}：每日学习与闭卷考核模板不存在")
+    else:
+        missing_headings = sorted(
+            DAILY_REVIEW_HEADINGS - headings[review_template_path]
+        )
+        if missing_headings:
+            errors.append(
+                f"{relative(DAILY_REVIEW_TEMPLATE)}：缺少模板标题 "
+                f"{', '.join(missing_headings)}"
+            )
 
     if errors:
         print(f"Obsidian Vault 检查失败：{len(errors)} 个问题", file=sys.stderr)
