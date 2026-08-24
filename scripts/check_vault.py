@@ -19,6 +19,7 @@ FOLLOWUP_TRAINING_TEMPLATE = ROOT / "00-追问链训练模板.md"
 FOLLOWUP_ANSWER_CARD = ROOT / "00-第一组追问链答案核对卡.md"
 P0_ANSWER_INDEX = ROOT / "00-P0母题答案核对入口.md"
 P0_BASIC_ANSWER_CARD = ROOT / "00-P0基础主干答案核对卡.md"
+P0_EXTENDED_ANSWER_CARD = ROOT / "00-P0扩展主干答案核对卡.md"
 RESUME_EVIDENCE_DOCS = {
     ROOT / "00-简历证据与追问地图.md",
     ROOT / "00-苍穹外卖项目证据卡.md",
@@ -110,6 +111,16 @@ P0_BASIC_ANSWER_CARD_HEADINGS = {
     "④ Redis：R2 Cache Aside 与一致性",
     "⑤ Web/项目：W1 JWT 认证与请求上下文",
     "⑥ 算法：A1 API、Comparator 与输入契约",
+    "核对结果回流",
+}
+P0_EXTENDED_ANSWER_CARD_HEADINGS = {
+    "使用规则",
+    "① Java：J2 集合选择、迭代与并发修改",
+    "② Spring：S3 AOP 代理与公共字段自动填充",
+    "③ MySQL：M1 SQL 结果语义、连接与分页",
+    "④ Redis：R1 数据结构、Key、过期与内存",
+    "⑤ Web/项目：W2 HTTP 语义、幂等与网络链路",
+    "⑥ 算法：A3 栈队列、树图与搜索",
     "核对结果回流",
 }
 PRIVATE_CONTACT_RE = re.compile(
@@ -283,6 +294,7 @@ def main() -> int:
         FOLLOWUP_ANSWER_CARD: FOLLOWUP_ANSWER_CARD_HEADINGS,
         P0_ANSWER_INDEX: P0_ANSWER_INDEX_HEADINGS,
         P0_BASIC_ANSWER_CARD: P0_BASIC_ANSWER_CARD_HEADINGS,
+        P0_EXTENDED_ANSWER_CARD: P0_EXTENDED_ANSWER_CARD_HEADINGS,
     }
     for template_path, required_headings in required_templates.items():
         resolved_path = template_path.resolve()
