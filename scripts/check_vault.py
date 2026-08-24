@@ -17,6 +17,8 @@ MOCK_INTERVIEW_TEMPLATE = ROOT / "00-模拟面试记录模板.md"
 PROJECT_EVIDENCE_TEMPLATE = ROOT / "00-项目证据卡模板.md"
 FOLLOWUP_TRAINING_TEMPLATE = ROOT / "00-追问链训练模板.md"
 FOLLOWUP_ANSWER_CARD = ROOT / "00-第一组追问链答案核对卡.md"
+P0_ANSWER_INDEX = ROOT / "00-P0母题答案核对入口.md"
+P0_BASIC_ANSWER_CARD = ROOT / "00-P0基础主干答案核对卡.md"
 RESUME_EVIDENCE_DOCS = {
     ROOT / "00-简历证据与追问地图.md",
     ROOT / "00-苍穹外卖项目证据卡.md",
@@ -92,6 +94,22 @@ FOLLOWUP_ANSWER_CARD_HEADINGS = {
     "④ Redis：R4 持久化与高可用",
     "⑤ Web/项目：W4 支付回调幂等",
     "⑥ 算法：A2 前缀和 + HashMap",
+    "核对结果回流",
+}
+P0_ANSWER_INDEX_HEADINGS = {
+    "使用规则",
+    "覆盖进度",
+    "使用流程",
+    "维护边界",
+}
+P0_BASIC_ANSWER_CARD_HEADINGS = {
+    "使用规则",
+    "① Java：J1 对象相等与 HashMap Key",
+    "② Spring：S2 MVC 请求与异常响应链",
+    "③ MySQL：M2 索引、回表与执行计划",
+    "④ Redis：R2 Cache Aside 与一致性",
+    "⑤ Web/项目：W1 JWT 认证与请求上下文",
+    "⑥ 算法：A1 API、Comparator 与输入契约",
     "核对结果回流",
 }
 PRIVATE_CONTACT_RE = re.compile(
@@ -263,6 +281,8 @@ def main() -> int:
         PROJECT_EVIDENCE_TEMPLATE: PROJECT_EVIDENCE_HEADINGS,
         FOLLOWUP_TRAINING_TEMPLATE: FOLLOWUP_TRAINING_HEADINGS,
         FOLLOWUP_ANSWER_CARD: FOLLOWUP_ANSWER_CARD_HEADINGS,
+        P0_ANSWER_INDEX: P0_ANSWER_INDEX_HEADINGS,
+        P0_BASIC_ANSWER_CARD: P0_BASIC_ANSWER_CARD_HEADINGS,
     }
     for template_path, required_headings in required_templates.items():
         resolved_path = template_path.resolve()
