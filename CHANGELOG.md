@@ -4,6 +4,8 @@
 
 ## 未发布
 
+- 新增 Day 14 六线任务与闭卷题单，推进 20 道新题并回查 22 道主干题，Spring/MyBatis 训练事务未回滚排障，MySQL 训练重复下单幂等，Redis 训练热点 Key 击穿治理，算法线完成两数之和。
+- Day 14 闭卷考核覆盖 volatile 非原子边界、事务自调用、业务唯一索引、缓存击穿、Maven 依赖冲突和 HashMap 扫描不变量。
 - 新增 Day 13 六线任务与闭卷题单，推进 28 道新题并回查 2 道 Spring/MyBatis 主干题，MySQL 训练死锁诊断，Redis 训练延迟排障，算法线完成有效括号判断。
 - Day 13 闭卷考核覆盖 sleep/wait、PageHelper、MySQL 死锁、Redis 延迟、Git 历史修正和栈不变量。
 - 新增 Day 12 六线任务与闭卷题单，推进 30 道新题，MySQL 训练 MVCC 与锁定读，Redis 训练分布式锁故障边界，算法线完成原地反转链表。
