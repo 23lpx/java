@@ -15,6 +15,7 @@ DAILY_REVIEW_TEMPLATE = ROOT / "00-每日学习与闭卷考核模板.md"
 SECOND_ROUND_REVIEW_TEMPLATE = ROOT / "00-第二轮诊断与复习模板.md"
 MOCK_INTERVIEW_TEMPLATE = ROOT / "00-模拟面试记录模板.md"
 PROJECT_EVIDENCE_TEMPLATE = ROOT / "00-项目证据卡模板.md"
+FOLLOWUP_TRAINING_TEMPLATE = ROOT / "00-追问链训练模板.md"
 RESUME_EVIDENCE_DOCS = {
     ROOT / "00-简历证据与追问地图.md",
     ROOT / "00-苍穹外卖项目证据卡.md",
@@ -69,6 +70,18 @@ PROJECT_EVIDENCE_HEADINGS = {
     "证据清单",
     "真实性边界",
     "复测记录",
+}
+FOLLOWUP_TRAINING_HEADINGS = {
+    "训练信息",
+    "母题入口",
+    "30 秒核心回答",
+    "60 秒机制与边界",
+    "120 秒场景闭环",
+    "连续追问记录",
+    "错误断点",
+    "六线结果",
+    "第二轮回流",
+    "复测",
 }
 PRIVATE_CONTACT_RE = re.compile(
     r"(?:1[3-9]\d{9}|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})",
@@ -237,6 +250,7 @@ def main() -> int:
         SECOND_ROUND_REVIEW_TEMPLATE: SECOND_ROUND_REVIEW_HEADINGS,
         MOCK_INTERVIEW_TEMPLATE: MOCK_INTERVIEW_HEADINGS,
         PROJECT_EVIDENCE_TEMPLATE: PROJECT_EVIDENCE_HEADINGS,
+        FOLLOWUP_TRAINING_TEMPLATE: FOLLOWUP_TRAINING_HEADINGS,
     }
     for template_path, required_headings in required_templates.items():
         resolved_path = template_path.resolve()
