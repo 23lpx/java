@@ -12,6 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LEARNING_QUEUE = ROOT / "00-第一轮学习队列.md"
 DAILY_REVIEW_TEMPLATE = ROOT / "00-每日学习与闭卷考核模板.md"
+SECOND_ROUND_REVIEW_TEMPLATE = ROOT / "00-第二轮诊断与复习模板.md"
+MOCK_INTERVIEW_TEMPLATE = ROOT / "00-模拟面试记录模板.md"
 EXCLUDED_PARTS = {".git", ".github", ".obsidian", ".idea", ".claude"}
 REQUIRED_FIELDS = {"category", "priority", "status", "tags"}
 VALID_PRIORITIES = {"P0", "P1", "P2"}
@@ -29,6 +31,28 @@ DAILY_REVIEW_HEADINGS = {
     "学习状态变更",
     "当日结果",
     "明日行动",
+}
+SECOND_ROUND_REVIEW_HEADINGS = {
+    "六线输入",
+    "白天断点修复",
+    "场景复盘",
+    "算法与手写",
+    "晚间闭卷考核",
+    "项目真实性检查",
+    "学习状态变更",
+    "队列更新",
+}
+MOCK_INTERVIEW_HEADINGS = {
+    "面试信息",
+    "面试前",
+    "六线面试记录",
+    "单题证据",
+    "项目真实性检查",
+    "算法与手写",
+    "面试后复盘",
+    "第二轮队列回流",
+    "状态变更",
+    "下一次面试",
 }
 
 
@@ -188,16 +212,20 @@ def main() -> int:
                     f"{relative(path)}：在第一轮学习队列中重复 {count} 次"
                 )
 
-    review_template_path = DAILY_REVIEW_TEMPLATE.resolve()
-    if review_template_path not in texts:
-        errors.append(f"{relative(DAILY_REVIEW_TEMPLATE)}：每日学习与闭卷考核模板不存在")
-    else:
-        missing_headings = sorted(
-            DAILY_REVIEW_HEADINGS - headings[review_template_path]
-        )
+    required_templates = {
+        DAILY_REVIEW_TEMPLATE: DAILY_REVIEW_HEADINGS,
+        SECOND_ROUND_REVIEW_TEMPLATE: SECOND_ROUND_REVIEW_HEADINGS,
+        MOCK_INTERVIEW_TEMPLATE: MOCK_INTERVIEW_HEADINGS,
+    }
+    for template_path, required_headings in required_templates.items():
+        resolved_path = template_path.resolve()
+        if resolved_path not in texts:
+            errors.append(f"{relative(template_path)}：模板不存在")
+            continue
+        missing_headings = sorted(required_headings - headings[resolved_path])
         if missing_headings:
             errors.append(
-                f"{relative(DAILY_REVIEW_TEMPLATE)}：缺少模板标题 "
+                f"{relative(template_path)}：缺少模板标题 "
                 f"{', '.join(missing_headings)}"
             )
 
