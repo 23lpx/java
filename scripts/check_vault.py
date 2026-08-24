@@ -14,6 +14,12 @@ LEARNING_QUEUE = ROOT / "00-第一轮学习队列.md"
 DAILY_REVIEW_TEMPLATE = ROOT / "00-每日学习与闭卷考核模板.md"
 SECOND_ROUND_REVIEW_TEMPLATE = ROOT / "00-第二轮诊断与复习模板.md"
 MOCK_INTERVIEW_TEMPLATE = ROOT / "00-模拟面试记录模板.md"
+PROJECT_EVIDENCE_TEMPLATE = ROOT / "00-项目证据卡模板.md"
+RESUME_EVIDENCE_DOCS = {
+    ROOT / "00-简历证据与追问地图.md",
+    ROOT / "00-苍穹外卖项目证据卡.md",
+    PROJECT_EVIDENCE_TEMPLATE,
+}
 EXCLUDED_PARTS = {".git", ".github", ".obsidian", ".idea", ".claude"}
 REQUIRED_FIELDS = {"category", "priority", "status", "tags"}
 VALID_PRIORITIES = {"P0", "P1", "P2"}
@@ -54,6 +60,20 @@ MOCK_INTERVIEW_HEADINGS = {
     "状态变更",
     "下一次面试",
 }
+PROJECT_EVIDENCE_HEADINGS = {
+    "证据元数据",
+    "简历主张",
+    "知识链",
+    "60 秒回答骨架",
+    "追问树",
+    "证据清单",
+    "真实性边界",
+    "复测记录",
+}
+PRIVATE_CONTACT_RE = re.compile(
+    r"(?:1[3-9]\d{9}|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})",
+    re.IGNORECASE,
+)
 
 
 def relative(path: Path) -> str:
@@ -216,6 +236,7 @@ def main() -> int:
         DAILY_REVIEW_TEMPLATE: DAILY_REVIEW_HEADINGS,
         SECOND_ROUND_REVIEW_TEMPLATE: SECOND_ROUND_REVIEW_HEADINGS,
         MOCK_INTERVIEW_TEMPLATE: MOCK_INTERVIEW_HEADINGS,
+        PROJECT_EVIDENCE_TEMPLATE: PROJECT_EVIDENCE_HEADINGS,
     }
     for template_path, required_headings in required_templates.items():
         resolved_path = template_path.resolve()
@@ -227,6 +248,16 @@ def main() -> int:
             errors.append(
                 f"{relative(template_path)}：缺少模板标题 "
                 f"{', '.join(missing_headings)}"
+            )
+
+    for evidence_path in RESUME_EVIDENCE_DOCS:
+        resolved_path = evidence_path.resolve()
+        if resolved_path not in texts:
+            errors.append(f"{relative(evidence_path)}：简历证据文件不存在")
+            continue
+        if PRIVATE_CONTACT_RE.search(texts[resolved_path]):
+            errors.append(
+                f"{relative(evidence_path)}：不得保存手机号或邮箱等私人联系方式"
             )
 
     if errors:
