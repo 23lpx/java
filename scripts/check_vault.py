@@ -16,6 +16,7 @@ SECOND_ROUND_REVIEW_TEMPLATE = ROOT / "00-第二轮诊断与复习模板.md"
 MOCK_INTERVIEW_TEMPLATE = ROOT / "00-模拟面试记录模板.md"
 PROJECT_EVIDENCE_TEMPLATE = ROOT / "00-项目证据卡模板.md"
 FOLLOWUP_TRAINING_TEMPLATE = ROOT / "00-追问链训练模板.md"
+FOLLOWUP_ANSWER_CARD = ROOT / "00-第一组追问链答案核对卡.md"
 RESUME_EVIDENCE_DOCS = {
     ROOT / "00-简历证据与追问地图.md",
     ROOT / "00-苍穹外卖项目证据卡.md",
@@ -82,6 +83,16 @@ FOLLOWUP_TRAINING_HEADINGS = {
     "六线结果",
     "第二轮回流",
     "复测",
+}
+FOLLOWUP_ANSWER_CARD_HEADINGS = {
+    "使用规则",
+    "① Java：J4 线程池过载",
+    "② Spring：S1 单例 Bean 与请求状态",
+    "③ MySQL：M3 MVCC 与并发扣减",
+    "④ Redis：R4 持久化与高可用",
+    "⑤ Web/项目：W4 支付回调幂等",
+    "⑥ 算法：A2 前缀和 + HashMap",
+    "核对结果回流",
 }
 PRIVATE_CONTACT_RE = re.compile(
     r"(?:1[3-9]\d{9}|[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})",
@@ -251,6 +262,7 @@ def main() -> int:
         MOCK_INTERVIEW_TEMPLATE: MOCK_INTERVIEW_HEADINGS,
         PROJECT_EVIDENCE_TEMPLATE: PROJECT_EVIDENCE_HEADINGS,
         FOLLOWUP_TRAINING_TEMPLATE: FOLLOWUP_TRAINING_HEADINGS,
+        FOLLOWUP_ANSWER_CARD: FOLLOWUP_ANSWER_CARD_HEADINGS,
     }
     for template_path, required_headings in required_templates.items():
         resolved_path = template_path.resolve()
