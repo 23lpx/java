@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 
@@ -18,10 +18,17 @@ MOCK_INTERVIEW_TEMPLATE = ROOT / "00-模拟面试记录模板.md"
 PROJECT_EVIDENCE_TEMPLATE = ROOT / "00-项目证据卡模板.md"
 FOLLOWUP_TRAINING_TEMPLATE = ROOT / "00-追问链训练模板.md"
 FOLLOWUP_ANSWER_CARD = ROOT / "00-第一组追问链答案核对卡.md"
+P0_MOTHER_MAP = ROOT / "00-P0母题与追问链地图.md"
 P0_ANSWER_INDEX = ROOT / "00-P0母题答案核对入口.md"
 P0_BASIC_ANSWER_CARD = ROOT / "00-P0基础主干答案核对卡.md"
 P0_EXTENDED_ANSWER_CARD = ROOT / "00-P0扩展主干答案核对卡.md"
 P0_CLOSING_ANSWER_CARD = ROOT / "00-P0收口主干答案核对卡.md"
+P0_ANSWER_CARDS = (
+    FOLLOWUP_ANSWER_CARD,
+    P0_BASIC_ANSWER_CARD,
+    P0_EXTENDED_ANSWER_CARD,
+    P0_CLOSING_ANSWER_CARD,
+)
 RESUME_EVIDENCE_DOCS = {
     ROOT / "00-简历证据与追问地图.md",
     ROOT / "00-苍穹外卖项目证据卡.md",
@@ -49,10 +56,36 @@ REQUIRED_QUESTION_SECTIONS = (
     "常见追问",
     "易错点",
 )
+EXPECTED_P0_IDS = tuple(
+    f"{prefix}{number}" for prefix in "JSMRWA" for number in range(1, 5)
+)
+P0_MOTHER_ROW_RE = re.compile(r"^\|\s*([JSMRWA]\d+)\s*\|", re.MULTILINE)
+P0_INDEX_MAPPING_RE = re.compile(
+    r"\b([JSMRWA]\d+)\s+\[\[([^#\]|]+)#([^\]|]+)(?:\|[^\]]+)?\]\]"
+)
+P0_ANSWER_HEADING_RE = re.compile(
+    r"^##\s+(.+?[：:]\s*([JSMRWA]\d+)(?:\s+.+)?)\s*$",
+    re.MULTILINE,
+)
+P0_ANSWER_SECTION_RE = re.compile(
+    r"^###\s+(30 秒参考回答|60 秒扩展要点|120 秒场景闭环)\s*$",
+    re.MULTILINE,
+)
+P0_LEVEL_RE = re.compile(r"^>\s*-\s*(L[0-4])：", re.MULTILINE)
+P0_CHECK_CALLOUT_RE = re.compile(
+    r"^>\s*\[!check\]-\s*L0～L4 核对\s*$",
+    re.MULTILINE,
+)
+REQUIRED_P0_ANSWER_SECTIONS = (
+    "30 秒参考回答",
+    "60 秒扩展要点",
+    "120 秒场景闭环",
+)
+REQUIRED_P0_LEVELS = ("L0", "L1", "L2", "L3", "L4")
 MAINTENANCE_ROADMAP_HEADINGS = {
     "维护目标",
     "批次顺序",
-    "当前批次：六段式结构门禁",
+    "已落地门禁",
     "后续批次边界",
     "V1.3 完成条件",
 }
@@ -216,6 +249,95 @@ def question_structure_errors(question_body: str) -> list[str]:
         )
         if not cleaned[match.end() : section_end].strip():
             issues.append(f"`{actual_sections[index]}` 正文为空")
+    return issues
+
+
+def p0_id_coverage_errors(
+    actual_ids: list[str],
+    source_name: str,
+    *,
+    require_order: bool,
+) -> list[str]:
+    """验证 P0 ID 是否恰好覆盖 J/S/M/R/W/A 各 1～4。"""
+    issues: list[str] = []
+    counts = Counter(actual_ids)
+    expected_set = set(EXPECTED_P0_IDS)
+    missing = [p0_id for p0_id in EXPECTED_P0_IDS if counts[p0_id] == 0]
+    duplicates = sorted(p0_id for p0_id, count in counts.items() if count > 1)
+    unexpected = sorted(set(actual_ids) - expected_set)
+
+    if missing:
+        issues.append(f"{source_name}缺少 P0 ID：{', '.join(missing)}")
+    if duplicates:
+        issues.append(f"{source_name}存在重复 P0 ID：{', '.join(duplicates)}")
+    if unexpected:
+        issues.append(f"{source_name}存在未知 P0 ID：{', '.join(unexpected)}")
+    if (
+        require_order
+        and not missing
+        and not duplicates
+        and not unexpected
+        and tuple(actual_ids) != EXPECTED_P0_IDS
+    ):
+        issues.append(f"{source_name}的 P0 ID 顺序与母题规范不一致")
+    return issues
+
+
+def p0_answer_structure_errors(answer_body: str) -> list[str]:
+    """验证一条 P0 答案的 30/60/120 秒层级和 L0～L4 核对项。"""
+    cleaned = remove_code_examples(answer_body)
+    section_matches = list(P0_ANSWER_SECTION_RE.finditer(cleaned))
+    actual_sections = [match.group(1) for match in section_matches]
+    issues: list[str] = []
+
+    if tuple(actual_sections) != REQUIRED_P0_ANSWER_SECTIONS:
+        expected = " → ".join(REQUIRED_P0_ANSWER_SECTIONS)
+        actual = " → ".join(actual_sections) if actual_sections else "无"
+        issues.append(f"答案层级异常（期望 {expected}；实际 {actual}）")
+    else:
+        for index, match in enumerate(section_matches):
+            section_end = (
+                section_matches[index + 1].start()
+                if index + 1 < len(section_matches)
+                else len(cleaned)
+            )
+            if not cleaned[match.end() : section_end].strip():
+                issues.append(f"`{actual_sections[index]}` 正文为空")
+
+    callout_count = len(P0_CHECK_CALLOUT_RE.findall(cleaned))
+    if callout_count != 1:
+        issues.append(f"L0～L4 核对块数量应为 1，实际为 {callout_count}")
+
+    actual_levels = P0_LEVEL_RE.findall(cleaned)
+    if tuple(actual_levels) != REQUIRED_P0_LEVELS:
+        expected = " → ".join(REQUIRED_P0_LEVELS)
+        actual = " → ".join(actual_levels) if actual_levels else "无"
+        issues.append(f"核对层级异常（期望 {expected}；实际 {actual}）")
+    return issues
+
+
+def p0_mapping_target_errors(
+    p0_id: str,
+    target_path: Path,
+    target_heading: str,
+    answer_locations: dict[str, list[tuple[Path, str]]],
+    answer_cards: set[Path],
+) -> list[str]:
+    """验证答案入口中的 ID 是否指向承载同一 ID 的唯一标题。"""
+    issues: list[str] = []
+    if target_path not in answer_cards:
+        issues.append(f"指向非 P0 答案卡 {relative(target_path)}")
+
+    locations = answer_locations.get(p0_id, [])
+    if len(locations) != 1:
+        return issues
+
+    expected_path, expected_heading = locations[0]
+    if target_path != expected_path or target_heading.strip() != expected_heading:
+        issues.append(
+            "映射不一致，应指向 "
+            f"`{relative(expected_path)}#{expected_heading}`"
+        )
     return issues
 
 
@@ -388,6 +510,96 @@ def main() -> int:
                 f"{', '.join(missing_headings)}"
             )
 
+    p0_map_path = P0_MOTHER_MAP.resolve()
+    p0_map_ids: list[str] = []
+    if p0_map_path not in texts:
+        errors.append(f"{relative(P0_MOTHER_MAP)}：P0 母题地图不存在")
+    else:
+        p0_map_ids = P0_MOTHER_ROW_RE.findall(
+            remove_code_examples(texts[p0_map_path])
+        )
+        errors.extend(
+            p0_id_coverage_errors(
+                p0_map_ids,
+                "P0 母题地图",
+                require_order=True,
+            )
+        )
+
+    answer_locations: dict[str, list[tuple[Path, str]]] = defaultdict(list)
+    answer_ids: list[str] = []
+    for answer_card in P0_ANSWER_CARDS:
+        answer_card_path = answer_card.resolve()
+        if answer_card_path not in texts:
+            continue
+        answer_text = remove_code_examples(texts[answer_card_path])
+        answer_matches = list(P0_ANSWER_HEADING_RE.finditer(answer_text))
+        for index, match in enumerate(answer_matches):
+            answer_heading, p0_id = match.groups()
+            answer_heading = answer_heading.strip()
+            answer_end = (
+                answer_matches[index + 1].start()
+                if index + 1 < len(answer_matches)
+                else len(answer_text)
+            )
+            answer_ids.append(p0_id)
+            answer_locations[p0_id].append((answer_card_path, answer_heading))
+            for issue in p0_answer_structure_errors(
+                answer_text[match.end() : answer_end]
+            ):
+                errors.append(
+                    f"{relative(answer_card)}：{p0_id} {issue}"
+                )
+
+    errors.extend(
+        p0_id_coverage_errors(
+            answer_ids,
+            "P0 答案卡",
+            require_order=False,
+        )
+    )
+
+    index_path = P0_ANSWER_INDEX.resolve()
+    index_mappings: list[tuple[str, str, str]] = []
+    if index_path not in texts:
+        errors.append(f"{relative(P0_ANSWER_INDEX)}：P0 答案入口不存在")
+    else:
+        index_mappings = P0_INDEX_MAPPING_RE.findall(
+            remove_code_examples(texts[index_path])
+        )
+        errors.extend(
+            p0_id_coverage_errors(
+                [p0_id for p0_id, _, _ in index_mappings],
+                "P0 答案入口",
+                require_order=True,
+            )
+        )
+
+    resolved_answer_cards = {path.resolve() for path in P0_ANSWER_CARDS}
+    for p0_id, target_text, target_heading in index_mappings:
+        target_path, error = resolve_note(
+            P0_ANSWER_INDEX,
+            target_text,
+            notes_by_stem,
+        )
+        if error or target_path is None:
+            errors.append(
+                f"{relative(P0_ANSWER_INDEX)}：{p0_id} 的答案映射无法解析"
+            )
+            continue
+
+        target_path = target_path.resolve()
+        for issue in p0_mapping_target_errors(
+            p0_id,
+            target_path,
+            target_heading,
+            answer_locations,
+            resolved_answer_cards,
+        ):
+            errors.append(
+                f"{relative(P0_ANSWER_INDEX)}：{p0_id} {issue}"
+            )
+
     for evidence_path in RESUME_EVIDENCE_DOCS:
         resolved_path = evidence_path.resolve()
         if resolved_path not in texts:
@@ -408,6 +620,7 @@ def main() -> int:
         "Obsidian Vault 检查通过："
         f"{len(files)} 个 Markdown 文件，{question_count} 道编号题，"
         f"六段式结构覆盖 {structured_question_count} 道编号题，"
+        f"P0 母题与答案映射 {len(EXPECTED_P0_IDS)}/24，"
         f"{sum(len(WIKILINK_RE.findall(remove_code_examples(text))) for text in texts.values())} 个 Wikilink，"
         f"学习队列覆盖 {len(queue_notes)} 个知识节点。"
     )
