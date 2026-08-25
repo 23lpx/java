@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+MAINTENANCE_ROADMAP = ROOT / "00-V1.3维护路线图.md"
 LEARNING_QUEUE = ROOT / "00-第一轮学习队列.md"
 DAILY_REVIEW_TEMPLATE = ROOT / "00-每日学习与闭卷考核模板.md"
 SECOND_ROUND_REVIEW_TEMPLATE = ROOT / "00-第二轮诊断与复习模板.md"
@@ -35,6 +36,26 @@ QUESTION_RE = re.compile(r"^##\s+(\d+)\.\s+(.+?)\s*$", re.MULTILINE)
 HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*$", re.MULTILINE)
 WIKILINK_RE = re.compile(r"!?\[\[([^\]]+)\]\]")
 FIELD_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_-]*):", re.MULTILINE)
+QUESTION_SECTION_RE = re.compile(
+    r"^\*\*(面试回答|原理与理解|成立条件与边界|"
+    r"实际场景(?:（[^）\n]+）)?|常见追问|易错点)\*\*\s*$",
+    re.MULTILINE,
+)
+REQUIRED_QUESTION_SECTIONS = (
+    "面试回答",
+    "原理与理解",
+    "成立条件与边界",
+    "实际场景",
+    "常见追问",
+    "易错点",
+)
+MAINTENANCE_ROADMAP_HEADINGS = {
+    "维护目标",
+    "批次顺序",
+    "当前批次：六段式结构门禁",
+    "后续批次边界",
+    "V1.3 完成条件",
+}
 DAILY_REVIEW_HEADINGS = {
     "今日计划",
     "白天学习记录",
@@ -171,6 +192,33 @@ def remove_code_examples(text: str) -> str:
     return re.sub(r"```.*?```", "", text, flags=re.DOTALL)
 
 
+def question_structure_errors(question_body: str) -> list[str]:
+    """验证单道编号题的六段式标签、顺序和非空正文。"""
+    cleaned = remove_code_examples(question_body)
+    section_matches = list(QUESTION_SECTION_RE.finditer(cleaned))
+    actual_sections = [
+        "实际场景" if match.group(1).startswith("实际场景") else match.group(1)
+        for match in section_matches
+    ]
+    expected_sections = list(REQUIRED_QUESTION_SECTIONS)
+
+    if actual_sections != expected_sections:
+        expected = " → ".join(expected_sections)
+        actual = " → ".join(actual_sections) if actual_sections else "无"
+        return [f"六段式结构异常（期望 {expected}；实际 {actual}）"]
+
+    issues: list[str] = []
+    for index, match in enumerate(section_matches):
+        section_end = (
+            section_matches[index + 1].start()
+            if index + 1 < len(section_matches)
+            else len(cleaned)
+        )
+        if not cleaned[match.end() : section_end].strip():
+            issues.append(f"`{actual_sections[index]}` 正文为空")
+    return issues
+
+
 def frontmatter_value(frontmatter: str, key: str) -> str | None:
     match = re.search(rf"^{re.escape(key)}:\s*(.*?)\s*$", frontmatter, re.MULTILINE)
     return match.group(1) if match else None
@@ -185,16 +233,16 @@ def resolve_note(
     if not cleaned:
         return source, None
 
-    target_path = Path(cleaned)
-    if target_path.suffix != ".md":
-        target_path = target_path.with_suffix(".md")
+    target_path = Path(
+        cleaned if cleaned.casefold().endswith(".md") else f"{cleaned}.md"
+    )
 
     candidates = [ROOT / target_path, source.parent / target_path]
     for candidate in candidates:
         if candidate.is_file():
             return candidate.resolve(), None
 
-    matches = notes_by_stem.get(Path(cleaned).stem, [])
+    matches = notes_by_stem.get(target_path.stem, [])
     if len(matches) == 1:
         return matches[0], None
     if len(matches) > 1:
@@ -221,6 +269,7 @@ def main() -> int:
 
     question_ids: dict[int, list[tuple[Path, str]]] = defaultdict(list)
     question_count = 0
+    structured_question_count = 0
 
     for path, text in texts.items():
         frontmatter, _ = split_frontmatter(text)
@@ -241,9 +290,27 @@ def main() -> int:
                 if status not in VALID_STATUSES:
                     errors.append(f"{relative(path)}：status 值无效：{status!r}")
 
-        for number, title in QUESTION_RE.findall(text):
+        question_matches = list(QUESTION_RE.finditer(text))
+        for index, match in enumerate(question_matches):
+            number, title = match.groups()
             question_count += 1
             question_ids[int(number)].append((path, title))
+            if is_knowledge_note(path):
+                question_end = (
+                    question_matches[index + 1].start()
+                    if index + 1 < len(question_matches)
+                    else len(text)
+                )
+                structure_issues = question_structure_errors(
+                    text[match.end() : question_end]
+                )
+                if structure_issues:
+                    for issue in structure_issues:
+                        errors.append(
+                            f"{relative(path)}：题号 {number} {issue}"
+                        )
+                else:
+                    structured_question_count += 1
 
         for raw_link in WIKILINK_RE.findall(remove_code_examples(text)):
             link = raw_link.split("|", 1)[0].strip()
@@ -296,7 +363,8 @@ def main() -> int:
                     f"{relative(path)}：在第一轮学习队列中重复 {count} 次"
                 )
 
-    required_templates = {
+    required_documents = {
+        MAINTENANCE_ROADMAP: MAINTENANCE_ROADMAP_HEADINGS,
         DAILY_REVIEW_TEMPLATE: DAILY_REVIEW_HEADINGS,
         SECOND_ROUND_REVIEW_TEMPLATE: SECOND_ROUND_REVIEW_HEADINGS,
         MOCK_INTERVIEW_TEMPLATE: MOCK_INTERVIEW_HEADINGS,
@@ -308,15 +376,15 @@ def main() -> int:
         P0_EXTENDED_ANSWER_CARD: P0_EXTENDED_ANSWER_CARD_HEADINGS,
         P0_CLOSING_ANSWER_CARD: P0_CLOSING_ANSWER_CARD_HEADINGS,
     }
-    for template_path, required_headings in required_templates.items():
-        resolved_path = template_path.resolve()
+    for document_path, required_headings in required_documents.items():
+        resolved_path = document_path.resolve()
         if resolved_path not in texts:
-            errors.append(f"{relative(template_path)}：模板不存在")
+            errors.append(f"{relative(document_path)}：必需维护文件不存在")
             continue
         missing_headings = sorted(required_headings - headings[resolved_path])
         if missing_headings:
             errors.append(
-                f"{relative(template_path)}：缺少模板标题 "
+                f"{relative(document_path)}：缺少必需标题 "
                 f"{', '.join(missing_headings)}"
             )
 
@@ -339,6 +407,7 @@ def main() -> int:
     print(
         "Obsidian Vault 检查通过："
         f"{len(files)} 个 Markdown 文件，{question_count} 道编号题，"
+        f"六段式结构覆盖 {structured_question_count} 道编号题，"
         f"{sum(len(WIKILINK_RE.findall(remove_code_examples(text))) for text in texts.values())} 个 Wikilink，"
         f"学习队列覆盖 {len(queue_notes)} 个知识节点。"
     )
