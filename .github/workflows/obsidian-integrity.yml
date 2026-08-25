@@ -12,6 +12,8 @@ permissions:
 jobs:
   check-vault:
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Shanghai
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,3 +25,6 @@ jobs:
 
       - name: Check Obsidian Vault
         run: python scripts/check_vault.py
+
+      - name: Check review metadata
+        run: python scripts/report_review_queue.py --check --limit 0
