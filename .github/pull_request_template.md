@@ -17,6 +17,7 @@
 - [ ] 文件或标题变更已同步更新全部引用
 - [ ] 题号保持唯一，未为补缺号全库重排
 - [ ] `python scripts/check_vault.py` 检查通过
+- [ ] `python scripts/report_review_queue.py --check --limit 0` 检查通过
 
 ## 场景真实性
 

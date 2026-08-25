@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MAINTENANCE_ROADMAP = ROOT / "00-V1.3维护路线图.md"
+VERSION_REVIEW_QUEUE = ROOT / "00-版本敏感内容复核队列.md"
 LEARNING_QUEUE = ROOT / "00-第一轮学习队列.md"
 DAILY_REVIEW_TEMPLATE = ROOT / "00-每日学习与闭卷考核模板.md"
 SECOND_ROUND_REVIEW_TEMPLATE = ROOT / "00-第二轮诊断与复习模板.md"
@@ -88,6 +89,14 @@ MAINTENANCE_ROADMAP_HEADINGS = {
     "已落地门禁",
     "后续批次边界",
     "V1.3 完成条件",
+}
+VERSION_REVIEW_QUEUE_HEADINGS = {
+    "判定边界",
+    "队列输入",
+    "排序规则",
+    "当前基线",
+    "执行流程",
+    "验收与回流",
 }
 DAILY_REVIEW_HEADINGS = {
     "今日计划",
@@ -487,6 +496,7 @@ def main() -> int:
 
     required_documents = {
         MAINTENANCE_ROADMAP: MAINTENANCE_ROADMAP_HEADINGS,
+        VERSION_REVIEW_QUEUE: VERSION_REVIEW_QUEUE_HEADINGS,
         DAILY_REVIEW_TEMPLATE: DAILY_REVIEW_HEADINGS,
         SECOND_ROUND_REVIEW_TEMPLATE: SECOND_ROUND_REVIEW_HEADINGS,
         MOCK_INTERVIEW_TEMPLATE: MOCK_INTERVIEW_HEADINGS,
